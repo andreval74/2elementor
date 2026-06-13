@@ -1,0 +1,41 @@
+@import './styles/components.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── BASE ─────────────────────────────────────────────────────────────────── */
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #3A3A42; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #EAB308; }
+
+/* ─── JSON SYNTAX HIGHLIGHT ────────────────────────────────────────────────── */
+.jsh-key        { color: #C792EA; }  /* roxo */
+.jsh-string     { color: #C3E88D; }  /* verde */
+.jsh-number     { color: #F78C6C; }  /* laranja */
+.jsh-boolean    { color: #82AAFF; }  /* azul */
+.jsh-null       { color: #82AAFF; }  /* azul */
+.jsh-punctuation{ color: #697098; }  /* cinza */
+
+/* ─── LOADING SHIMMER ───────────────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -468px 0; }
+  100% { background-position: 468px 0; }
+}
+.shimmer {
+  background: linear-gradient(to right, #1A1A1E 8%, #2A2A30 18%, #1A1A1E 33%);
+  background-size: 936px 104px;
+  animation: shimmer 1.2s linear infinite;
+}
+
+/* ─── STATUS BAR PULSE ─────────────────────────────────────────────────────── */
+@keyframes statusPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.status-pulse { animation: statusPulse 1.5s ease-in-out infinite; }

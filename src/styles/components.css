@@ -1,0 +1,554 @@
+/*
+ * WebKeeper — Componentes CSS
+ * Todos os estilos visuais compostos do app.
+ * Use @apply aqui; nos arquivos .tsx use apenas os nomes das classes.
+ */
+
+@layer components {
+
+  /* ══════════════════════════════════════════════════════
+     BASES REUTILIZÁVEIS (só para @apply interno)
+     ══════════════════════════════════════════════════════ */
+
+  .tab-base {
+    @apply flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all duration-200;
+  }
+
+  .btn-base {
+    @apply flex items-center justify-center rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .icon-circle-base {
+    @apply flex items-center justify-center rounded-lg shrink-0;
+  }
+
+
+  /* ══════════════════════════════════════════════════════
+     SUPERFÍCIES & CARDS
+     ══════════════════════════════════════════════════════ */
+
+  /* Card principal de coluna */
+  .wk-card {
+    @apply bg-bg-surface border border-border-subtle rounded-2xl p-5 shadow-card flex flex-col;
+  }
+
+  /* Card interno — seções, itens de lista */
+  .wk-card-inner {
+    @apply rounded-xl border border-border-subtle bg-bg-card overflow-hidden transition-all duration-200 hover:border-border;
+  }
+
+  /* Card com fundo surface */
+  .wk-card-surface {
+    @apply rounded-xl border border-border-subtle bg-bg-surface;
+  }
+
+  /* Card com fundo base (mais escuro) */
+  .wk-card-base {
+    @apply rounded-xl border border-border-subtle bg-bg-base;
+  }
+
+  /* Card dourado — paginas.zip, highlights */
+  .wk-card-gold {
+    @apply rounded-xl border border-gold/20 bg-gold/5;
+  }
+
+  /* Card compacto (modo grid de seções) */
+  .wk-card-compact {
+    @apply rounded-xl border border-border-subtle bg-bg-card p-3 flex flex-col gap-2 hover:border-border transition-all duration-200;
+  }
+
+
+  /* ══════════════════════════════════════════════════════
+     BARRAS DE ABAS / AÇÕES
+     ══════════════════════════════════════════════════════ */
+
+  /* Tab bar com fundo surface — ENTRADA */
+  .wk-tab-bar {
+    @apply flex rounded-xl bg-bg-surface border border-border-subtle p-1 gap-1;
+  }
+
+  /* Tab bar com fundo base — EXPORTAÇÃO */
+  .wk-tab-bar-base {
+    @apply flex rounded-xl bg-bg-base border border-border-subtle p-1 gap-1;
+  }
+
+  /* Aba inativa — ENTRADA (px maior) */
+  .wk-tab {
+    @apply tab-base px-3 text-content-muted hover:text-content-primary hover:bg-bg-hover;
+  }
+
+  /* Aba ativa — ENTRADA */
+  .wk-tab-active {
+    @apply tab-base px-3 bg-gold text-black shadow-gold-sm;
+  }
+
+  /* Botão de ação inativo — EXPORTAÇÃO (px menor) */
+  .wk-tab-action {
+    @apply tab-base px-2 text-content-muted hover:text-content-primary hover:bg-bg-hover;
+  }
+
+  /* Botão de ação ativo — EXPORTAÇÃO gold */
+  .wk-tab-action-gold {
+    @apply tab-base px-2 bg-gold text-black shadow-gold-sm;
+  }
+
+  /* Botão de info / toggle (canto da tab bar) */
+  .wk-tab-info {
+    @apply shrink-0 flex items-center justify-center py-2 px-2.5 rounded-lg text-xs transition-all duration-200 text-content-muted hover:text-content-primary hover:bg-bg-hover;
+  }
+
+  /* Botão info — estado ativo */
+  .wk-tab-info-on {
+    @apply shrink-0 flex items-center justify-center py-2 px-2.5 rounded-lg text-xs transition-all duration-200 bg-gold/10 text-gold;
+  }
+
+
+  /* ══════════════════════════════════════════════════════
+     BOTÕES
+     ══════════════════════════════════════════════════════ */
+
+  /* Primário — dourado, largura total (Converter) */
+  .wk-btn-primary {
+    @apply btn-base w-full py-2.5 px-4 gap-1.5 font-bold text-sm bg-gold text-black hover:bg-gold-light shadow-gold-sm hover:shadow-gold;
+  }
+
+  /* Secundário — contorno, largura total (Analisar) */
+  .wk-btn-outline {
+    @apply btn-base w-full py-2.5 px-4 gap-1.5 font-semibold text-sm border border-border text-content-secondary hover:border-gold hover:text-gold;
+  }
+
+  /* Perigo — largura total (Limpar em EXPORTAÇÃO) */
+  .wk-btn-danger {
+    @apply w-full py-2 px-4 rounded-xl border border-red-900/40 text-red-400 hover:border-red-500 hover:bg-red-950/30 text-sm font-medium transition-all;
+  }
+
+  /* Botão do header — contorno (Configurar) */
+  .wk-btn-header {
+    @apply flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border-subtle text-content-muted hover:border-gold hover:text-gold text-xs font-medium transition-all;
+  }
+
+  /* Botão do header — perigo (Limpar no header) */
+  .wk-btn-header-danger {
+    @apply flex items-center gap-1.5 px-3 py-2 rounded-xl border border-red-900/40 text-red-400 hover:border-red-500 hover:bg-red-950/30 text-xs font-medium transition-all;
+  }
+
+  /* Ícone pequeno — ações em cards (copiar, download) */
+  .wk-btn-icon {
+    @apply p-1 rounded-lg text-content-muted hover:text-gold hover:bg-bg-hover transition-all;
+  }
+
+  /* Ícone médio — header, modais */
+  .wk-btn-icon-md {
+    @apply p-2 rounded-xl text-content-muted hover:text-gold hover:bg-bg-hover transition-all;
+  }
+
+  /* Ícone pequeno-médio — compact card */
+  .wk-btn-icon-sm {
+    @apply p-1.5 rounded-lg text-content-muted hover:text-gold hover:bg-bg-hover transition-all;
+  }
+
+  /* Botão X interno na textarea */
+  .wk-btn-clear {
+    @apply absolute top-3 right-3 p-1.5 rounded-lg text-content-muted hover:text-red-400 hover:bg-red-950/40 transition-all;
+  }
+
+  /* Download outline — ImportGuide page.json */
+  .wk-btn-download {
+    @apply flex items-center justify-center gap-1.5 w-full px-3 py-2 rounded-lg border border-border-subtle text-xs font-medium text-content-secondary hover:border-gold hover:text-gold transition-all mt-auto;
+  }
+
+  /* Download dourado — ImportGuide paginas.zip */
+  .wk-btn-download-gold {
+    @apply flex items-center justify-center gap-1.5 w-full px-3 py-2 rounded-lg bg-gold/10 border border-gold/30 text-xs font-semibold text-gold hover:bg-gold/20 transition-all mt-auto;
+  }
+
+  /* Salvar modal (ConfigDashboard) */
+  .wk-btn-modal-save {
+    @apply px-5 py-2 rounded-xl bg-gold text-black text-sm font-bold hover:bg-gold-light transition-all shadow-gold-sm;
+  }
+
+  /* FAB scroll-to-top */
+  .wk-btn-scroll-top {
+    @apply fixed bottom-6 right-6 z-50 w-10 h-10 rounded-full bg-gold text-black flex items-center justify-center shadow-lg hover:bg-gold/80 transition-all;
+  }
+
+
+  /* ══════════════════════════════════════════════════════
+     BADGES & PILLS
+     ══════════════════════════════════════════════════════ */
+
+  /* Pill dourado — contagem de sessões, etc. */
+  .wk-badge-gold {
+    @apply px-2 py-0.5 rounded-full bg-gold/10 border border-gold/20 text-gold text-[10px] font-bold;
+  }
+
+  /* Badge verde — "Recomendado" */
+  .wk-badge-green {
+    @apply text-[10px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/20 font-semibold;
+  }
+
+  /* Badge azul — "simples" */
+  .wk-badge-blue {
+    @apply text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-semibold;
+  }
+
+  /* Bolinha de contagem no header (histórico) */
+  .wk-badge-count {
+    @apply absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-gold text-black text-[9px] font-bold flex items-center justify-center;
+  }
+
+  /* Badge de versão no header */
+  .wk-badge-mvp {
+    @apply hidden sm:block px-2 py-0.5 rounded-full text-[10px] font-bold bg-gold/10 text-gold border border-gold/20;
+  }
+
+  /* Contagem de imagens dentro do botão zip */
+  .wk-badge-zip {
+    @apply ml-0.5 px-1 py-0.5 rounded-full bg-black/20 text-[9px] font-bold;
+  }
+
+
+  /* ══════════════════════════════════════════════════════
+     ÍCONES COM CONTAINER
+     ══════════════════════════════════════════════════════ */
+
+  /* Logo do app */
+  .wk-icon-app {
+    @apply w-8 h-8 rounded-xl bg-gold flex items-center justify-center shadow-gold-sm;
+  }
+
+  /* Círculo grande — guia de importação, cabeçalhos */
+  .wk-icon-lg {
+    @apply w-8 h-8 rounded-xl bg-gold/10 border border-gold/20 flex items-center justify-center;
+  }
+
+  /* Círculo pequeno azul — Método 1 */
+  .wk-icon-blue {
+    @apply icon-circle-base w-6 h-6 bg-blue-500/10 border border-blue-500/20;
+  }
+
+  /* Círculo pequeno dourado — Método 2, análise */
+  .wk-icon-gold-sm {
+    @apply icon-circle-base w-6 h-6 bg-gold/10 border border-gold/20;
+  }
+
+
+  /* ══════════════════════════════════════════════════════
+     STATUS (SectionCard)
+     ══════════════════════════════════════════════════════ */
+
+  .wk-status-valid  { @apply flex items-center gap-1 text-xs text-green-400 font-medium; }
+  .wk-status-warn   { @apply flex items-center gap-1 text-xs text-yellow-400 font-medium; }
+  .wk-status-error  { @apply flex items-center gap-1 text-xs text-red-400 font-medium; }
+
+  /* Percentual de confiança — largura fixa para alinhar */
+  .wk-confidence {
+    @apply text-xs font-mono w-9 text-right shrink-0;
+  }
+
+  /* Row de ação dentro do card */
+  .wk-section-row {
+    @apply flex items-center justify-between px-4 py-3 gap-3 min-h-[56px];
+  }
+
+  /* Lado esquerdo do card (nome + arquivo) */
+  .wk-section-left {
+    @apply flex items-center gap-3 flex-1 min-w-0;
+  }
+
+  /* Lado direito do card (badges + ações) */
+  .wk-section-actions {
+    @apply flex items-center gap-2 shrink-0;
+  }
+
+
+  /* ══════════════════════════════════════════════════════
+     ALERTAS & AVISOS
+     ══════════════════════════════════════════════════════ */
+
+  /* Linha de erro inline (SectionCard validação) */
+  .wk-alert-error {
+    @apply text-xs text-red-400 bg-red-950/30 border border-red-900/40 rounded-lg px-3 py-1.5;
+  }
+
+  /* Linha de aviso inline (SectionCard validação) */
+  .wk-alert-warn {
+    @apply text-xs text-yellow-400 bg-yellow-950/30 border border-yellow-900/40 rounded-lg px-3 py-1.5;
+  }
+
+  /* Barra amarela de rodapé (ImportGuide imagens) */
+  .wk-alert-yellow-bar {
+    @apply flex items-start gap-3 px-6 py-3.5 bg-yellow-500/5 border-t border-yellow-500/20;
+  }
+
+  /* Alerta inline em linha (erro de imagem no UploadPanel) */
+  .wk-alert-inline {
+    @apply flex items-center gap-2 text-xs text-red-400 bg-red-950/30 border border-red-900/40 rounded-lg px-3 py-2;
+  }
+
+  /* Barra de erro global no topo da página */
+  .wk-error-bar {
+    @apply bg-red-950/60 border-b border-red-900/40 px-6 py-2.5 text-sm text-red-400 flex items-center gap-2;
+  }
+
+
+  /* ══════════════════════════════════════════════════════
+     DRAG & DROP
+     ══════════════════════════════════════════════════════ */
+
+  /* Zona de drop base (sem estado) */
+  .wk-drop-zone {
+    @apply flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed cursor-pointer transition-all duration-200;
+  }
+
+  /* Estado padrão */
+  .wk-drop-idle {
+    @apply border-border-subtle hover:border-border;
+  }
+
+  /* Estado com item em cima */
+  .wk-drop-over {
+    @apply border-gold bg-gold/5;
+  }
+
+  /* Wrapper da textarea com borda de drop */
+  .wk-drop-textarea-wrap {
+    @apply relative flex-1 min-h-0 rounded-xl border-2 transition-all duration-200;
+  }
+
+
+  /* ══════════════════════════════════════════════════════
+     FORMULÁRIOS
+     ══════════════════════════════════════════════════════ */
+
+  /* Input de texto (ConfigDashboard) */
+  .wk-input {
+    @apply w-full bg-bg-base border border-border-subtle rounded-lg px-3 py-2 text-sm text-content-primary placeholder:text-content-disabled outline-none focus:border-gold focus:ring-1 focus:ring-gold/30 transition-all;
+  }
+
+  /* Textarea de código (UploadPanel HTML) */
+  .wk-textarea {
+    @apply w-full h-full min-h-[280px] resize-none bg-transparent p-4 text-xs font-mono text-content-secondary placeholder:text-content-disabled outline-none rounded-xl leading-relaxed;
+  }
+
+  /* `code` inline dourado */
+  .wk-code {
+    @apply bg-bg-card text-gold px-1.5 py-0.5 rounded text-xs font-mono;
+  }
+
+  /* `code` em fundo escuro/amarelo */
+  .wk-code-dark {
+    @apply bg-black/20 px-1 rounded font-mono;
+  }
+
+
+  /* ══════════════════════════════════════════════════════
+     ANÁLISE
+     ══════════════════════════════════════════════════════ */
+
+  .wk-stat-card {
+    @apply flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-bg-surface border border-border-subtle;
+  }
+
+  .wk-suggestion-card {
+    @apply flex gap-2.5 p-3 rounded-xl border border-border-subtle bg-bg-surface;
+  }
+
+
+  /* ══════════════════════════════════════════════════════
+     GUIA DE IMPORTAÇÃO
+     ══════════════════════════════════════════════════════ */
+
+  /* Número do passo */
+  .wk-step-num {
+    @apply w-6 h-6 rounded-full bg-gold/20 border border-gold/40 text-gold text-xs font-bold flex items-center justify-center shrink-0 mt-0.5;
+  }
+
+  /* Header clicável do accordion */
+  .wk-guide-toggle {
+    @apply w-full flex items-center justify-between px-6 py-4 hover:bg-bg-hover transition-colors;
+  }
+
+  /* Card de método neutro */
+  .wk-guide-method {
+    @apply flex flex-col gap-4 p-4 rounded-xl border border-border-subtle bg-bg-base;
+  }
+
+  /* Card de método dourado (paginas.zip) */
+  .wk-guide-method-gold {
+    @apply flex flex-col gap-4 p-4 rounded-xl border border-gold/20 bg-gold/5;
+  }
+
+
+  /* ══════════════════════════════════════════════════════
+     MODAL (ConfigDashboard)
+     ══════════════════════════════════════════════════════ */
+
+  .wk-modal-overlay {
+    @apply fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in;
+  }
+
+  .wk-modal {
+    @apply relative w-full max-w-xl max-h-[90vh] flex flex-col rounded-2xl bg-bg-surface border border-border shadow-modal overflow-hidden animate-slide-up;
+  }
+
+  .wk-modal-header {
+    @apply flex items-center justify-between px-6 py-4 border-b border-border-subtle;
+  }
+
+  .wk-modal-body {
+    @apply flex-1 overflow-y-auto px-6 py-5 space-y-4;
+  }
+
+  .wk-modal-footer {
+    @apply flex justify-between items-center px-6 py-4 border-t border-border-subtle;
+  }
+
+  /* Preview do WhatsApp token */
+  .wk-token-preview {
+    @apply bg-green-950/30 border border-green-900/40 rounded-xl px-4 py-3;
+  }
+
+
+  /* ══════════════════════════════════════════════════════
+     TIPOGRAFIA SEMÂNTICA
+     ══════════════════════════════════════════════════════ */
+
+  /* Título de coluna */
+  .wk-col-title {
+    @apply text-sm font-bold text-content-primary uppercase tracking-wider;
+  }
+
+  /* Subtítulo de coluna */
+  .wk-col-subtitle {
+    @apply text-xs text-content-muted mt-0.5;
+  }
+
+  /* Label section (uppercase muted) */
+  .wk-label {
+    @apply text-xs text-content-muted font-medium uppercase tracking-wider;
+  }
+
+
+  /* ══════════════════════════════════════════════════════
+     ITENS DE ZIP / LISTA DE ARQUIVOS
+     ══════════════════════════════════════════════════════ */
+
+  .wk-zip-item {
+    @apply w-full text-left px-3 py-2 rounded-lg text-xs font-mono transition-all;
+  }
+
+  .wk-zip-item-active {
+    @apply bg-gold/10 text-gold border border-gold/30;
+  }
+
+  .wk-zip-item-idle {
+    @apply text-content-secondary hover:bg-bg-hover border border-transparent;
+  }
+
+
+  /* ══════════════════════════════════════════════════════
+     ESTIMATIVA DE IMAGEM (UploadPanel)
+     ══════════════════════════════════════════════════════ */
+
+  .wk-image-estimate {
+    @apply flex items-center justify-between px-3 py-2 rounded-lg bg-bg-surface border border-border-subtle;
+  }
+
+  .wk-progress-track {
+    @apply w-20 h-1.5 rounded-full bg-bg-hover overflow-hidden;
+  }
+
+  .wk-progress-fill {
+    @apply h-full rounded-full bg-gold transition-all;
+  }
+
+
+  /* ══════════════════════════════════════════════════════
+     JSON VIEWER
+     ══════════════════════════════════════════════════════ */
+
+  .wk-json-viewer {
+    @apply relative overflow-auto rounded-lg bg-[#0D0D10] border border-border-subtle;
+  }
+
+  .wk-json-pre {
+    @apply p-4 text-xs font-mono leading-relaxed text-content-secondary whitespace-pre;
+  }
+
+
+  /* ══════════════════════════════════════════════════════
+     INFO BOX (OutputPanel)
+     ══════════════════════════════════════════════════════ */
+
+  .wk-format-info {
+    @apply rounded-xl border border-border-subtle bg-bg-surface p-3 text-xs space-y-2.5 animate-fade-in;
+  }
+
+  /* Lista de seções com scroll */
+  .wk-section-list {
+    @apply flex flex-col max-h-[520px] overflow-y-auto divide-y divide-border-subtle;
+  }
+
+
+  /* ══════════════════════════════════════════════════════
+     HISTÓRICO
+     ══════════════════════════════════════════════════════ */
+
+  .wk-history-dropdown {
+    @apply absolute right-6 top-full mt-2 w-72 bg-bg-surface border border-border rounded-xl shadow-modal overflow-hidden z-50 animate-slide-up;
+  }
+
+  .wk-history-item {
+    @apply w-full text-left px-4 py-2.5 hover:bg-bg-hover transition-colors border-b border-border-subtle last:border-0;
+  }
+
+
+  /* ══════════════════════════════════════════════════════
+     ESTADO VAZIO / PLACEHOLDER
+     ══════════════════════════════════════════════════════ */
+
+  .wk-empty {
+    @apply flex flex-col items-center justify-center gap-3 opacity-40 text-center;
+  }
+
+
+  /* ══════════════════════════════════════════════════════
+     LAYOUT GLOBAL
+     ══════════════════════════════════════════════════════ */
+
+  /* Container max-width centralizado */
+  .wk-container {
+    @apply max-w-[1600px] mx-auto px-6;
+  }
+
+  /* Grid principal 3 colunas */
+  .wk-main-grid {
+    @apply grid grid-cols-1 lg:grid-cols-[38fr_22fr_40fr] gap-6 items-stretch;
+  }
+
+  /* Subbar (indicador de suporte) */
+  .wk-subbar {
+    @apply border-b border-border-subtle bg-bg-surface/50;
+  }
+
+  /* Rodapé */
+  .wk-footer {
+    @apply border-t border-border-subtle py-3 px-6;
+  }
+
+  /* FAB scroll-to-top */
+  .wk-scroll-top {
+    @apply fixed bottom-6 right-6 z-50 w-10 h-10 rounded-full bg-gold text-black flex items-center justify-center shadow-lg hover:bg-gold/80 transition-all;
+  }
+
+  /* Status dot */
+  .wk-status-dot {
+    @apply w-2 h-2 rounded-full;
+  }
+
+  /* Contador (linhas/chars/tamanho) */
+  .wk-counter-bar {
+    @apply flex gap-4 text-xs text-content-muted font-mono px-1;
+  }
+}

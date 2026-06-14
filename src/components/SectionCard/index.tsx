@@ -29,12 +29,6 @@ function StatusBadge({ valid, errCount, warnCount }: { valid: boolean; errCount:
   )
 }
 
-function ConfidenceBadge({ confidence }: { confidence: number }) {
-  const pct   = Math.round(confidence * 100)
-  const color = pct >= 70 ? 'text-green-400' : pct >= 40 ? 'text-yellow-400' : 'text-content-muted'
-  return <span className={`wk-confidence ${color}`}>{pct}%</span>
-}
-
 export function SectionCard({ sectionExport, compact = false, noExpand = false }: SectionCardProps) {
   const { section, template, validation } = sectionExport
   const [expanded, setExpanded] = useState(false)
@@ -53,9 +47,8 @@ export function SectionCard({ sectionExport, compact = false, noExpand = false }
   if (compact) {
     return (
       <div className="wk-card-compact">
-        <div className="flex items-start justify-between gap-1.5">
-          <p className="text-xs font-semibold text-content-primary leading-tight">{section.label}</p>
-          <ConfidenceBadge confidence={section.confidence} />
+        <div className="flex items-start gap-1.5">
+          <p className="text-xs font-semibold text-content-primary leading-tight flex-1">{section.label}</p>
         </div>
         <div className="flex items-center justify-between">
           <p className="text-[10px] text-content-disabled font-mono truncate max-w-[80px]">{section.outputFile}</p>
@@ -84,7 +77,6 @@ export function SectionCard({ sectionExport, compact = false, noExpand = false }
           </div>
         </div>
         <div className="wk-section-actions">
-          <ConfidenceBadge confidence={section.confidence} />
           <StatusBadge valid={validation.valid} errCount={validation.errors.length} warnCount={validation.warnings.length} />
           <button onClick={handleCopy} title="Copiar JSON" className="wk-btn-icon">
             {copied ? <CheckCircle size={13} className="text-green-400" /> : <Copy size={13} />}
@@ -114,7 +106,6 @@ export function SectionCard({ sectionExport, compact = false, noExpand = false }
           </div>
         </div>
         <div className="wk-section-actions">
-          <ConfidenceBadge confidence={section.confidence} />
           <StatusBadge valid={validation.valid} errCount={validation.errors.length} warnCount={validation.warnings.length} />
           <button onClick={handleCopy} title="Copiar JSON" className="wk-btn-icon">
             {copied ? <CheckCircle size={13} className="text-green-400" /> : <Copy size={13} />}

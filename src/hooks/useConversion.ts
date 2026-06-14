@@ -6,11 +6,12 @@
 import { useState, useCallback } from 'react'
 import { parseHTML, countNodeStats } from '@/services/html-parser'
 import { detectSections } from '@/services/section-detector'
-import { resolveTokens } from '@/services/token-resolver'
+import { resolveNodeTree } from '@/services/token-resolver'
 import { exportSection, exportFullPage, templateToJson } from '@/services/elementor-exporter'
 import { validateTemplate } from '@/services/validator'
 import { extractImages } from '@/services/image-extractor'
-import type { ConversionStatus, SectionExport, InputType } from '@/types/app.types'
+import { extractPageAssets } from '@/services/css-extractor'
+import type { ConversionStatus, SectionExport, InputType, UIAnalysisResult } from '@/types/app.types'
 import type { Section } from '@/types/layout.types'
 import type { TokenMap } from '@/types/app.types'
 import type { ExtractedImage } from '@/services/image-extractor'
@@ -21,6 +22,7 @@ export interface ConversionResult {
   nodeStats: Record<string, number>
   pageJson: string
   extractedImages: ExtractedImage[]
+  uiAnalysis?: UIAnalysisResult
 }
 
 export interface UseConversionReturn {
@@ -29,6 +31,7 @@ export interface UseConversionReturn {
   result: ConversionResult | null
   analyze: (html: string) => void
   convert: (html: string, tokens: TokenMap, inputType?: InputType) => void
+  setUiAnalysis: (analysis: UIAnalysisResult) => void
   reset: () => void
 }
 
@@ -63,6 +66,8 @@ export function useConversion(): UseConversionReturn {
     setStatus('parsing')
     setErrorMessage(null)
     try {
+      // Extrai CSS e font links do <head> ANTES do parse (parseHTML só lê o body)
+      const pageAssets = extractPageAssets(html)
       const nodes = parseHTML(html)
       const sections = detectSections(nodes)
       const nodeStats = countNodeStats(nodes)
@@ -70,19 +75,15 @@ export function useConversion(): UseConversionReturn {
       setStatus('mapping')
 
       const exports: SectionExport[] = sections.map(section => {
-        const resolvedNodes = section.nodes.map(node => ({
-          ...node,
-          textContent: node.textContent ? resolveTokens(node.textContent, tokens) : node.textContent,
-          rawHtml: node.rawHtml ? resolveTokens(node.rawHtml, tokens) : node.rawHtml,
-        }))
+        const resolvedNodes = section.nodes.map(node => resolveNodeTree(node, tokens))
         const resolvedSection = { ...section, nodes: resolvedNodes }
-        const template = exportSection(resolvedSection)
+        const template = exportSection(resolvedSection, undefined, pageAssets)
         const validation = validateTemplate(template)
         return { section: resolvedSection, template, validation }
       })
 
       const allSections = exports.map(e => e.section)
-      const pageTemplate = exportFullPage(allSections)
+      const pageTemplate = exportFullPage(allSections, 'Página Completa', pageAssets)
       const pageJson = templateToJson(pageTemplate)
 
       setResult({ sections, exports, nodeStats, pageJson, extractedImages })
@@ -93,11 +94,15 @@ export function useConversion(): UseConversionReturn {
     }
   }, [])
 
+  const setUiAnalysis = useCallback((analysis: UIAnalysisResult) => {
+    setResult(prev => prev ? { ...prev, uiAnalysis: analysis } : null)
+  }, [])
+
   const reset = useCallback(() => {
     setStatus('idle')
     setErrorMessage(null)
     setResult(null)
   }, [])
 
-  return { status, errorMessage, result, analyze, convert, reset }
+  return { status, errorMessage, result, analyze, convert, setUiAnalysis, reset }
 }

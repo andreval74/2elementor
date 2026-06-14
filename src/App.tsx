@@ -15,6 +15,7 @@ import { useTokens } from '@/hooks/useTokens'
 import { useHistory } from '@/hooks/useHistory'
 import { downloadTextFile, downloadZip } from '@/utils/downloadFile'
 import { templateToJson } from '@/services/elementor-exporter'
+import type { UIAnalysisResult } from '@/types/app.types'
 
 function StatusDot({ status }: { status: string }) {
   const map: Record<string, { color: string; label: string; pulse: boolean }> = {
@@ -58,6 +59,7 @@ export default function App() {
   const [showScrollTop, setShowScrollTop] = useState(false)
   const [analyzedForHtml, setAnalyzedForHtml] = useState('')
   const [convertedForHtml, setConvertedForHtml] = useState('')
+  const [uiAnalysis, setUiAnalysis] = useState<UIAnalysisResult | undefined>(undefined)
 
   const conversion = useConversion()
   const { tokens, setToken, resetTokens, whatsappPreview } = useTokens()
@@ -103,7 +105,23 @@ export default function App() {
     conversion.reset()
     setAnalyzedForHtml('')
     setConvertedForHtml('')
+    setUiAnalysis(undefined)
   }, [conversion])
+
+  function handleDownloadDesignJson() {
+    if (!uiAnalysis) return
+    downloadTextFile(JSON.stringify(uiAnalysis, null, 2), 'design.json')
+  }
+
+  function handleDownloadAnalysisHtml() {
+    if (!uiAnalysis?.code?.html) return
+    downloadTextFile(uiAnalysis.code.html, 'index.html')
+  }
+
+  function handleDownloadAnalysisCss() {
+    if (!uiAnalysis?.code?.css) return
+    downloadTextFile(uiAnalysis.code.css, 'styles.css')
+  }
 
   function handleDownloadPage() {
     if (!pageJson) return
@@ -243,6 +261,7 @@ export default function App() {
               html={html}
               onHtmlChange={setHtml}
               onAnalyze={handleAnalyze}
+              onVisionResult={setUiAnalysis}
               loading={isLoading}
               analyzeDisabled={analyzeAlreadyDone}
             />
@@ -290,9 +309,13 @@ export default function App() {
               <OutputPanel
                 exports={exports}
                 extractedImages={extractedImages}
+                uiAnalysis={uiAnalysis}
                 onDownloadPage={handleDownloadPage}
                 onDownloadAll={handleDownloadAll}
                 onPreview={handlePreviewInBrowser}
+                onDownloadDesignJson={handleDownloadDesignJson}
+                onDownloadHtml={handleDownloadAnalysisHtml}
+                onDownloadCss={handleDownloadAnalysisCss}
               />
             </div>
             <div className="mt-4 pt-4 border-t border-border-subtle">

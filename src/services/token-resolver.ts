@@ -3,6 +3,7 @@
 // [MAINTENANCE: tokens]: adicionar novos tokens dinâmicos aqui
 
 import type { TokenMap } from '@/types/app.types'
+import type { LayoutNode } from '@/types/layout.types'
 
 function buildWhatsappLink(number: string, message: string): string {
   if (!number) return '#'
@@ -52,4 +53,31 @@ export function resolveTokens(html: string, tokens: TokenMap): string {
  */
 export function previewWhatsappLink(number: string, message: string): string {
   return buildWhatsappLink(number, message)
+}
+
+/**
+ * Resolve tokens em toda a árvore de LayoutNode recursivamente.
+ * Necessário com o mapper nativo que acessa nós filhos diretamente
+ * (textContent, rawHtml e attributes de todos os níveis da árvore).
+ */
+export function resolveNodeTree(node: LayoutNode, tokens: TokenMap): LayoutNode {
+  const map = buildTokenMap(tokens)
+  function resolveStr(s: string): string {
+    return Object.entries(map).reduce((acc, [token, value]) => {
+      const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      return acc.replace(new RegExp(escaped, 'g'), () => value)
+    }, s)
+  }
+  function walkNode(n: LayoutNode): LayoutNode {
+    return {
+      ...n,
+      textContent: n.textContent ? resolveStr(n.textContent) : n.textContent,
+      rawHtml: n.rawHtml ? resolveStr(n.rawHtml) : n.rawHtml,
+      attributes: Object.fromEntries(
+        Object.entries(n.attributes).map(([k, v]) => [k, resolveStr(v)]),
+      ),
+      children: n.children.map(walkNode),
+    }
+  }
+  return walkNode(node)
 }

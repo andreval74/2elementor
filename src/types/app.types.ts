@@ -3,6 +3,9 @@
 
 import type { Section } from './layout.types'
 import type { ElementorTemplate } from './elementor.types'
+import type { UIAnalysisResult } from './vision.types'
+
+export type { UIAnalysisResult }
 
 export type InputType = 'html' | 'zip' | 'image'
 

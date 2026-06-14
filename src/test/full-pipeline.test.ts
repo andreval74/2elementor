@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import { parseHTML } from '@/services/html-parser'
 import { detectSections } from '@/services/section-detector'
-import { resolveTokens } from '@/services/token-resolver'
+import { resolveNodeTree } from '@/services/token-resolver'
 import { exportFullPage, exportSection, templateToJson } from '@/services/elementor-exporter'
 import { validateTemplate } from '@/services/validator'
+import { extractPageAssets } from '@/services/css-extractor'
 import type { TokenMap } from '@/types/app.types'
 import {
   FX_HERO, FX_FAQ, FX_CTA,
@@ -23,20 +24,17 @@ const tokens: TokenMap = {
 }
 
 function fullPipeline(html: string) {
+  const pageAssets = extractPageAssets(html)
   const nodes = parseHTML(html)
   const sections = detectSections(nodes)
   const resolved = sections.map(section => ({
     ...section,
-    nodes: section.nodes.map(node => ({
-      ...node,
-      textContent: node.textContent ? resolveTokens(node.textContent, tokens) : node.textContent,
-      rawHtml: node.rawHtml ? resolveTokens(node.rawHtml, tokens) : node.rawHtml,
-    })),
+    nodes: section.nodes.map(node => resolveNodeTree(node, tokens)),
   }))
-  const template = exportFullPage(resolved)
+  const template = exportFullPage(resolved, 'Página Completa', pageAssets)
   const json = templateToJson(template)
   const validation = validateTemplate(template)
-  return { sections, resolved, template, json, validation }
+  return { sections, resolved, template, json, validation, pageAssets }
 }
 
 describe('pipeline completo — HTML → JSON Elementor válido', () => {
@@ -85,15 +83,35 @@ describe('pipeline completo — HTML → JSON Elementor válido', () => {
     expect(footer).toBeDefined()
     const resolved = {
       ...footer,
-      nodes: footer.nodes.map(n => ({
-        ...n,
-        rawHtml: n.rawHtml ? resolveTokens(n.rawHtml, tokens) : n.rawHtml,
-      })),
+      nodes: footer.nodes.map(n => resolveNodeTree(n, tokens)),
     }
-    const template = exportSection(resolved)
+    const pageAssets = extractPageAssets(FX_FOOTER)
+    const template = exportSection(resolved, undefined, pageAssets)
     expect(template.type).toBe('footer')
     const json = templateToJson(template)
     expect(json).toContain('WebKeeper Digital')
     expect(json).not.toContain('{{NOME_EMPRESA}}')
+  })
+
+  it('CSS extraído do <head> aparece em page_settings.custom_css', () => {
+    const html = `
+      <html>
+        <head>
+          <style>.text-gold { color: #EAB308 } .glow-gold { box-shadow: 0 0 20px gold }</style>
+        </head>
+        <body>
+          <section class="hero bg-black"><h1 class="text-gold">Título</h1></section>
+        </body>
+      </html>
+    `
+    const { json } = fullPipeline(html)
+    expect(json).toContain('CSS DA PÁGINA ORIGINAL')
+    expect(json).toContain('.text-gold')
+    expect(json).toContain('#EAB308')
+  })
+
+  it('_css_classes preserva classes originais nos widgets nativos', () => {
+    const { json } = fullPipeline(FX_HERO)
+    expect(json).toContain('_css_classes')
   })
 })

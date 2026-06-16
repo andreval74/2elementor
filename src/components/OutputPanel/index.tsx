@@ -1,4 +1,4 @@
-import { Download, Package, Info, ExternalLink, Palette, FileCode, FileJson } from 'lucide-react'
+import { Download, Package, Info, Wand2, RefreshCw, Palette, FileCode, FileJson } from 'lucide-react'
 import { useState } from 'react'
 import { SectionCard } from '@/components/SectionCard'
 import type { SectionExport, UIAnalysisResult } from '@/types/app.types'
@@ -10,7 +10,8 @@ interface OutputPanelProps {
   uiAnalysis?: UIAnalysisResult
   onDownloadPage: () => void
   onDownloadAll: () => Promise<void>
-  onPreview: () => void
+  onRefine?: () => void
+  isRefining?: boolean
   onDownloadDesignJson?: () => void
   onDownloadHtml?: () => void
   onDownloadCss?: () => void
@@ -18,7 +19,7 @@ interface OutputPanelProps {
 
 export function OutputPanel({
   exports, extractedImages, uiAnalysis,
-  onDownloadPage, onDownloadAll, onPreview,
+  onDownloadPage, onDownloadAll, onRefine, isRefining,
   onDownloadDesignJson, onDownloadHtml, onDownloadCss,
 }: OutputPanelProps) {
   const [showFormatInfo, setShowFormatInfo] = useState(false)
@@ -121,8 +122,16 @@ export function OutputPanel({
               <button onClick={onDownloadPage} className="wk-tab-action" title="Baixar page.json">
                 <Download size={13} /> page.json
               </button>
-              <button onClick={onPreview} className="wk-tab-action" title="Abrir Preview no navegador">
-                <ExternalLink size={13} /> Preview
+              <button
+                onClick={onRefine}
+                disabled={!onRefine || isRefining}
+                className="wk-tab-action"
+                title="Refinar JSON com IA — gera versão melhorada"
+              >
+                {isRefining
+                  ? <RefreshCw size={13} className="animate-spin" />
+                  : <Wand2 size={13} />}
+                {isRefining ? 'Refinando...' : 'Re-fazer'}
               </button>
               <button
                 onClick={() => setShowFormatInfo(v => !v)}

@@ -7,10 +7,12 @@ import { useState, useCallback } from 'react'
 import { parseHTML, countNodeStats } from '@/services/html-parser'
 import { detectSections } from '@/services/section-detector'
 import { resolveNodeTree } from '@/services/token-resolver'
-import { exportSection, exportFullPage, templateToJson } from '@/services/elementor-exporter'
+import { exportSection, exportFullPage, exportVisionPage, templateToJson } from '@/services/elementor-exporter'
 import { validateTemplate } from '@/services/validator'
 import { extractImages } from '@/services/image-extractor'
 import { extractPageAssets } from '@/services/css-extractor'
+import { mapVisionToElementor } from '@/services/vision-elementor-mapper'
+import { refinePageJson } from '@/services/ai-refiner'
 import type { ConversionStatus, SectionExport, InputType, UIAnalysisResult } from '@/types/app.types'
 import type { Section } from '@/types/layout.types'
 import type { TokenMap } from '@/types/app.types'
@@ -31,6 +33,8 @@ export interface UseConversionReturn {
   result: ConversionResult | null
   analyze: (html: string) => void
   convert: (html: string, tokens: TokenMap, inputType?: InputType) => void
+  convertFromVision: (analysis: UIAnalysisResult) => void
+  refine: (rawHtml: string, currentPageJson: string) => Promise<void>
   setUiAnalysis: (analysis: UIAnalysisResult) => void
   reset: () => void
 }
@@ -94,6 +98,36 @@ export function useConversion(): UseConversionReturn {
     }
   }, [])
 
+  const convertFromVision = useCallback((analysis: UIAnalysisResult) => {
+    if (!analysis?.sections?.length) return
+    setStatus('mapping')
+    setErrorMessage(null)
+    try {
+      const elements = mapVisionToElementor(analysis)
+      const template = exportVisionPage(elements)
+      const pageJson = templateToJson(template)
+      setResult({ sections: [], exports: [], nodeStats: {}, extractedImages: [], pageJson, uiAnalysis: analysis })
+      setStatus('done')
+    } catch (err) {
+      setStatus('error')
+      setErrorMessage(err instanceof Error ? err.message : 'Erro na conversão Vision → Elementor')
+    }
+  }, [])
+
+  const refine = useCallback(async (rawHtml: string, currentPageJson: string) => {
+    setStatus('mapping')
+    setErrorMessage(null)
+    try {
+      const refinedJson = await refinePageJson(rawHtml, currentPageJson)
+      // Preserva sections/exports acumulados — só substitui o pageJson refinado
+      setResult(prev => prev ? { ...prev, pageJson: refinedJson } : null)
+      setStatus('done')
+    } catch (err) {
+      setStatus('error')
+      setErrorMessage(err instanceof Error ? err.message : 'Erro ao refinar com IA')
+    }
+  }, [])
+
   const setUiAnalysis = useCallback((analysis: UIAnalysisResult) => {
     setResult(prev => prev ? { ...prev, uiAnalysis: analysis } : null)
   }, [])
@@ -104,5 +138,5 @@ export function useConversion(): UseConversionReturn {
     setResult(null)
   }, [])
 
-  return { status, errorMessage, result, analyze, convert, setUiAnalysis, reset }
+  return { status, errorMessage, result, analyze, convert, convertFromVision, refine, setUiAnalysis, reset }
 }

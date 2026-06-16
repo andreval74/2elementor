@@ -5,7 +5,7 @@
 // JS é sempre preservado em widget html — nunca convertido para nativo.
 
 import { generateUniqueId } from '@/utils/generateId'
-import { WEBKEEPER_STYLES, WEBKEEPER_FIRST_WIDGET_SETUP } from '@/utils/constants'
+import { WEBKEEPER_FIRST_WIDGET_SETUP } from '@/utils/constants'
 import type { Section, LayoutNode } from '@/types/layout.types'
 import type {
   ElementorElement,
@@ -103,7 +103,11 @@ function parseColorWithOpacity(colorName: string, opacityStr?: string): string |
 }
 
 function extractColor(node: LayoutNode): string | undefined {
-  if (node.styles?.['color']) return node.styles['color']
+  const inlineColor = node.styles?.['color']
+  if (inlineColor) {
+    const cleaned = inlineColor.trim()
+    if (/^#[0-9a-fA-F]{3,8}$/.test(cleaned) || /^rgba?\(/.test(cleaned)) return cleaned
+  }
   const c = nodeClass(node)
   const hex = c.match(/text-\[#([0-9a-fA-F]{3,6})\]/)
   if (hex) return `#${hex[1]}`
@@ -123,11 +127,16 @@ function extractColor(node: LayoutNode): string | undefined {
   if (c.includes('text-gray-400')) return '#9CA3AF'
   if (c.includes('text-gray-500')) return '#6B7280'
   if (c.includes('text-black')) return '#000000'
+  if (c.includes('btn-gold')) return '#000000'
   return undefined
 }
 
 function extractBgColor(node: LayoutNode): string | undefined {
-  if (node.styles?.['background-color']) return node.styles['background-color']
+  const inlineBg = node.styles?.['background-color'] ?? node.styles?.['background']
+  if (inlineBg) {
+    const cleaned = inlineBg.trim()
+    if (/^#[0-9a-fA-F]{3,8}$/.test(cleaned) || /^rgba?\(/.test(cleaned)) return cleaned
+  }
   const c = nodeClass(node)
   const hex = c.match(/bg-\[#([0-9a-fA-F]{3,6})\]/)
   if (hex) return `#${hex[1]}`
@@ -148,6 +157,7 @@ function extractBgColor(node: LayoutNode): string | undefined {
   if (c.includes('bg-white')) return '#FFFFFF'
   if (c.includes('bg-gray-900')) return '#111827'
   if (c.includes('bg-gray-800')) return '#1F2937'
+  if (c.includes('btn-gold')) return '#EAB308'
   return undefined
 }
 
@@ -374,7 +384,7 @@ function buildButtonWidget(node: LayoutNode): ElementorElement {
   const settings: ElementorSettings = {
     text,
     link: { url: href, is_external: false, nofollow: false },
-    button_type: 'info',
+    button_type: '',
   }
   const cssClasses = (node.attributes.class ?? '').trim()
   if (cssClasses) settings._css_classes = cssClasses
@@ -397,9 +407,11 @@ function buildIconListWidget(node: LayoutNode): ElementorElement {
     .filter(li => li.tag === 'li')
     .map(li => {
       const link = li.children.find(c => c.tag === 'a')
+      // <li><a>texto</a></li> → textContent do <li> é vazio; busca no filho <a>
+      const text = (li.textContent ?? link?.textContent ?? '').trim()
       return {
         id: freshId(),
-        text: (li.textContent ?? '').trim(),
+        text,
         link: { url: link?.attributes.href ?? '#', is_external: false, nofollow: false },
         icon: { value: '', library: 'none' },
       }
@@ -433,11 +445,11 @@ function buildVideoWidget(node: LayoutNode): ElementorElement {
   }
 }
 
-// Fallback: widget html — WEBKEEPER_STYLES sem CDN (CDN é injetado via buildTailwindSetup)
+// Fallback: widget html — CSS global via page_settings.custom_css (não duplicar por widget)
 function buildHtmlWidget(html: string): ElementorElement {
   return {
     id: freshId(), elType: 'widget', widgetType: 'html', isInner: false,
-    settings: { html: `${WEBKEEPER_STYLES}\n${html}` }, elements: [],
+    settings: { html }, elements: [],
   }
 }
 
@@ -560,7 +572,9 @@ function processChildren(nodes: LayoutNode[], depth: number): ElementorElement[]
 
 // ─── SEÇÃO → CONTAINER ELEMENTOR ─────────────────────────────────────────────
 
-function mapSectionNodeToContainer(section: Section, fontLinks = ''): ElementorElement {
+// isFirst = true injeta Tailwind CDN + fontes UMA VEZ na primeira seção
+// Tailwind Play CDN usa MutationObserver — processa classes de TODA a página após carregar
+function mapSectionNodeToContainer(section: Section, fontLinks = '', isFirst = false): ElementorElement {
   const topNode = section.nodes[0]
 
   if (!topNode) {
@@ -596,8 +610,16 @@ function mapSectionNodeToContainer(section: Section, fontLinks = ''): ElementorE
   const sectionPadding = extractPadding(topNode)
   if (sectionPadding) sectionSettings.padding = sectionPadding
 
-  // Setup widget inclui CDN Tailwind + font links extraídas da página
-  widgets.unshift(buildTailwindSetup(fontLinks))
+  // Extrai borda da seção (ex: border-y border-white/5)
+  const sectionBorder = extractBorder(topNode)
+  if (sectionBorder) {
+    sectionSettings.border_border = sectionBorder.border_border
+    sectionSettings.border_width = sectionBorder.border_width
+    sectionSettings.border_color = sectionBorder.border_color
+  }
+
+  // Tailwind CDN carregado UMA VEZ — MutationObserver aplica a todas as seções
+  if (isFirst) widgets.unshift(buildTailwindSetup(fontLinks))
 
   return buildContainerEl(widgets, sectionSettings, false)
 }
@@ -606,23 +628,22 @@ function mapSectionNodeToContainer(section: Section, fontLinks = ''): ElementorE
 
 /**
  * Converte um array de Section em ElementorElement[].
- * Injeta setup Tailwind CDN como primeiro elemento — sempre, independente de html widgets.
- * @param fontLinks - Tags <link> de fontes extraídas do <head> para injetar no setup widget
+ * Tailwind CDN injetado apenas na primeira seção — aplica globalmente via MutationObserver.
+ * @param fontLinks - Tags <link> de fontes extraídas do <head>
  */
 export function mapSectionsToElementor(sections: Section[], fontLinks = ''): ElementorElement[] {
   resetRegistry()
-  const elements = sections.map((section, i) =>
-    mapSectionNodeToContainer(section, i === 0 ? fontLinks : ''),
+  return sections.map((section, i) =>
+    mapSectionNodeToContainer(section, fontLinks, i === 0),
   )
-  return elements
 }
 
 /**
  * Converte uma única Section em ElementorElement.
- * Útil para exportação individual por seção.
+ * Sempre injeta Tailwind CDN (seção única = primeira da página).
  * @param fontLinks - Tags <link> de fontes extraídas do <head>
  */
 export function mapSingleSection(section: Section, fontLinks = ''): ElementorElement {
   resetRegistry()
-  return mapSectionNodeToContainer(section, fontLinks)
+  return mapSectionNodeToContainer(section, fontLinks, true)
 }

@@ -107,19 +107,36 @@
      BOTÕES
      ══════════════════════════════════════════════════════ */
 
-  /* Primário — dourado, largura total (Converter) */
+  /* Primário — dourado sólido (legado, manter para retrocompat) */
   .wk-btn-primary {
     @apply btn-base w-full py-2.5 px-4 gap-1.5 font-bold text-sm bg-gold text-black hover:bg-gold-light shadow-gold-sm hover:shadow-gold;
   }
 
-  /* Secundário — contorno, largura total (Analisar) */
+  /* Secundário — contorno dourado (legado) */
   .wk-btn-outline {
     @apply btn-base w-full py-2.5 px-4 gap-1.5 font-semibold text-sm border border-border text-content-secondary hover:border-gold hover:text-gold;
   }
 
-  /* Perigo — largura total (Limpar em EXPORTAÇÃO) */
+  /* ── Botões de ação coloridos — mesmo padrão de borda + hover fill ── */
+
+  /* Visualizar — azul */
+  .wk-btn-blue {
+    @apply btn-base w-full py-2 px-4 gap-1.5 border border-blue-900/40 text-blue-400 hover:border-blue-500 hover:bg-blue-950/30 text-sm font-medium;
+  }
+
+  /* Analisar — laranja */
+  .wk-btn-orange {
+    @apply btn-base w-full py-2 px-4 gap-1.5 border border-orange-900/40 text-orange-400 hover:border-orange-500 hover:bg-orange-950/30 text-sm font-medium;
+  }
+
+  /* Converter — amarelo */
+  .wk-btn-yellow {
+    @apply btn-base w-full py-2 px-4 gap-1.5 border border-yellow-900/40 text-yellow-400 hover:border-yellow-500 hover:bg-yellow-950/30 text-sm font-medium;
+  }
+
+  /* Limpar — vermelho */
   .wk-btn-danger {
-    @apply w-full py-2 px-4 rounded-xl border border-red-900/40 text-red-400 hover:border-red-500 hover:bg-red-950/30 text-sm font-medium transition-all;
+    @apply btn-base w-full py-2 px-4 gap-1.5 border border-red-900/40 text-red-400 hover:border-red-500 hover:bg-red-950/30 text-sm font-medium;
   }
 
   /* Botão do header — contorno (Configurar) */

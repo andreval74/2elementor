@@ -1,21 +1,10 @@
-import type { VisionProvider, ProviderId } from '@/types/vision.types'
-import { geminiProvider } from './providers/gemini'
-import { openrouterProvider } from './providers/openrouter'
-import { togetherProvider } from './providers/together'
-import { claudeProvider } from './providers/claude'
-import { proxyProvider, isProxyAvailable } from './providers/proxy'
+import type { VisionProvider } from '@/types/vision.types'
+import { proxyProvider } from './providers/proxy'
 
-export { isProxyAvailable }
+export { isProxyAvailable } from './providers/proxy'
 
-export const PROVIDERS: VisionProvider[] = [
-  // Proxy sem chave aparece primeiro quando disponível (deploy com VITE_PROXY_URL)
-  ...(isProxyAvailable ? [proxyProvider] : []),
-  geminiProvider,      // FREE — 250 req/dia
-  openrouterProvider,  // FREE — 50 req/dia
-  togetherProvider,    // FREE* — $25 créditos
-  claudeProvider,      // PAGO — máxima qualidade
-]
+export const PROVIDERS: VisionProvider[] = [proxyProvider]
 
-export function getProvider(id: ProviderId | string): VisionProvider {
-  return PROVIDERS.find(p => p.id === id) ?? PROVIDERS[0]
+export function getProvider(_id?: string): VisionProvider {
+  return proxyProvider
 }

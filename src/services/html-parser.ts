@@ -38,8 +38,11 @@ function parseAttributes(el: Element): Record<string, string> {
 function parseInlineStyles(style: string): Record<string, string> {
   const result: Record<string, string> = {}
   style.split(';').forEach(declaration => {
-    const [prop, val] = declaration.split(':')
-    if (prop && val) result[prop.trim()] = val.trim()
+    const colonIdx = declaration.indexOf(':')
+    if (colonIdx === -1) return
+    const prop = declaration.slice(0, colonIdx).trim()
+    const val = declaration.slice(colonIdx + 1).trim()
+    if (prop && val) result[prop] = val
   })
   return result
 }

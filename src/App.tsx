@@ -3,8 +3,9 @@
 // [FUTURE: auth] — adicionar autenticação aqui (Fase 2)
 // [FUTURE: billing] — verificar cota de conversões (Fase 2)
 
-import { useState, useEffect, useCallback } from 'react'
-import { Settings, Zap, Clock, Trash2, Upload, BarChart3, Layers, ArrowUp } from 'lucide-react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+// useRef mantido para pendingConvertHtml (auto-convert após analyze)
+import { Settings, Zap, Clock, Trash2, Upload, BarChart3, Layers, ArrowUp, MonitorPlay, RefreshCw } from 'lucide-react'
 import { UploadPanel } from '@/components/UploadPanel'
 import { AnalysisPanel } from '@/components/AnalysisPanel'
 import { OutputPanel } from '@/components/OutputPanel'
@@ -15,7 +16,9 @@ import { useTokens } from '@/hooks/useTokens'
 import { useHistory } from '@/hooks/useHistory'
 import { downloadTextFile, downloadZip } from '@/utils/downloadFile'
 import { templateToJson } from '@/services/elementor-exporter'
+import { renderElementorTemplate } from '@/utils/elementor-renderer'
 import type { UIAnalysisResult } from '@/types/app.types'
+import type { ElementorTemplate } from '@/types/elementor.types'
 
 function StatusDot({ status }: { status: string }) {
   const map: Record<string, { color: string; label: string; pulse: boolean }> = {
@@ -60,6 +63,8 @@ export default function App() {
   const [analyzedForHtml, setAnalyzedForHtml] = useState('')
   const [convertedForHtml, setConvertedForHtml] = useState('')
   const [uiAnalysis, setUiAnalysis] = useState<UIAnalysisResult | undefined>(undefined)
+  const pendingConvertHtml = useRef('')
+  const lastConvertedHtmlRef = useRef('')
 
   const conversion = useConversion()
   const { tokens, setToken, resetTokens, whatsappPreview } = useTokens()
@@ -81,24 +86,50 @@ export default function App() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  // Auto-converte após análise quando o usuário clicou em "Converter" sem ter analisado ainda
+  useEffect(() => {
+    if (pendingConvertHtml.current && sections.length > 0 && conversion.status === 'done') {
+      const h = pendingConvertHtml.current
+      pendingConvertHtml.current = ''
+      handleConvert(h)
+    }
+  }, [sections.length, conversion.status]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleAnalyze = useCallback((h: string) => {
     conversion.analyze(h)
     setAnalyzedForHtml(h)
     setConvertedForHtml('')
   }, [conversion])
 
+  // Salva no histórico após a conversão completar (useEffect abaixo)
+  // — conversion.result não reflete o novo valor no mesmo tick do handleConvert
+  useEffect(() => {
+    if (!lastConvertedHtmlRef.current) return
+    if (conversion.status !== 'done' || !conversion.result?.exports.length) return
+    addToHistory({
+      title: `Conversão ${new Date().toLocaleTimeString('pt-BR')}`,
+      inputType: 'html',
+      rawHtml: lastConvertedHtmlRef.current,
+      exports: conversion.result.exports,
+    })
+    lastConvertedHtmlRef.current = ''
+  }, [conversion.status]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleConvert = useCallback((h: string) => {
+    lastConvertedHtmlRef.current = h
     conversion.convert(h, tokens)
     setConvertedForHtml(h)
-    if (conversion.result) {
-      addToHistory({
-        title: `Conversão ${new Date().toLocaleTimeString('pt-BR')}`,
-        inputType: 'html',
-        rawHtml: h,
-        exports: conversion.result.exports,
-      })
-    }
-  }, [conversion, tokens, addToHistory])
+  }, [conversion, tokens])
+
+  const handleVisionConvert = useCallback((result: UIAnalysisResult) => {
+    setUiAnalysis(result)
+    conversion.convertFromVision(result)
+  }, [conversion])
+
+  const handleRefine = useCallback(async () => {
+    if (!html || !pageJson) return
+    await conversion.refine(html, pageJson)
+  }, [html, pageJson, conversion])
 
   const handleReset = useCallback(() => {
     setHtml('')
@@ -150,8 +181,13 @@ export default function App() {
   }
 
   function handlePreviewInBrowser() {
-    if (!html) return
-    const blob = new Blob([html], { type: 'text/html; charset=utf-8' })
+    // Se existe JSON convertido, renderiza a estrutura Elementor para preview fiel
+    // Caso contrário, exibe o HTML original de entrada
+    const previewHtml = pageJson
+      ? renderElementorTemplate(JSON.parse(pageJson) as ElementorTemplate)
+      : html
+    if (!previewHtml) return
+    const blob = new Blob([previewHtml], { type: 'text/html; charset=utf-8' })
     const url  = URL.createObjectURL(blob)
     window.open(url, '_blank')
     setTimeout(() => URL.revokeObjectURL(url), 60000)
@@ -262,6 +298,7 @@ export default function App() {
               onHtmlChange={setHtml}
               onAnalyze={handleAnalyze}
               onVisionResult={setUiAnalysis}
+              onVisionConvert={handleVisionConvert}
               loading={isLoading}
               analyzeDisabled={analyzeAlreadyDone}
             />
@@ -281,17 +318,16 @@ export default function App() {
             <div className="flex-1">
               <AnalysisPanel sections={sections} nodeStats={nodeStats} rawHtml={html} />
             </div>
-            {sections.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-border-subtle">
-                <button
-                  onClick={() => handleConvert(html)}
-                  disabled={!html.trim() || isLoading || convertAlreadyDone}
-                  className="wk-btn-primary"
-                >
-                  {isLoading ? 'Convertendo...' : 'Converter →'}
-                </button>
-              </div>
-            )}
+            <div className="mt-4 pt-4 border-t border-border-subtle">
+              <button
+                onClick={() => handleConvert(html)}
+                disabled={!html.trim() || isLoading || convertAlreadyDone || sections.length === 0}
+                className="wk-btn-yellow"
+              >
+                {isLoading ? <RefreshCw size={14} className="animate-spin" /> : <Zap size={14} />}
+                {isLoading ? 'Convertendo...' : 'Converter →'}
+              </button>
+            </div>
           </div>
 
           {/* COLUNA DIREITA — Exportação (sempre visível) */}
@@ -312,14 +348,30 @@ export default function App() {
                 uiAnalysis={uiAnalysis}
                 onDownloadPage={handleDownloadPage}
                 onDownloadAll={handleDownloadAll}
-                onPreview={handlePreviewInBrowser}
+                onRefine={pageJson ? handleRefine : undefined}
+                isRefining={isLoading}
                 onDownloadDesignJson={handleDownloadDesignJson}
                 onDownloadHtml={handleDownloadAnalysisHtml}
                 onDownloadCss={handleDownloadAnalysisCss}
               />
             </div>
-            <div className="mt-4 pt-4 border-t border-border-subtle">
-              <button onClick={handleReset} className="wk-btn-danger">Limpar</button>
+            <div className="mt-4 pt-4 border-t border-border-subtle flex gap-2">
+              <button
+                onClick={handlePreviewInBrowser}
+                disabled={!html.trim() && !pageJson}
+                className="wk-btn-blue flex-1"
+                title={pageJson ? 'Visualizar resultado convertido' : 'Visualizar HTML de entrada'}
+              >
+                <MonitorPlay size={14} />
+                Visualização
+              </button>
+              <button
+                onClick={handleReset}
+                disabled={!html.trim() && exports.length === 0 && !pageJson}
+                className="wk-btn-danger flex-1"
+              >
+                <Trash2 size={14} /> Limpar
+              </button>
             </div>
           </div>
         </div>

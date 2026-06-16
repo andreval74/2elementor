@@ -88,12 +88,3 @@ export const WEBKEEPER_FIRST_WIDGET_SETUP = `<link href="https://fonts.googleapi
   .max-container{max-width:80rem}
 </style>`
 
-// Bloco injetado nos widgets subsequentes — Tailwind já está na página
-export const WEBKEEPER_STYLES = `<style>
-  .glow-gold{box-shadow:0 0 20px rgba(234,179,8,.4),0 0 40px rgba(234,179,8,.2)}
-  .text-gold{color:#EAB308}
-  .bg-gold{background-color:#EAB308}
-  .btn-gold{background:linear-gradient(135deg,#EAB308,#CA8A04);color:#000;font-weight:600;transition:all .3s}
-  .btn-gold:hover{background:linear-gradient(135deg,#FCD34D,#EAB308)}
-  .max-container{max-width:80rem}
-</style>`

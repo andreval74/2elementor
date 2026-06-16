@@ -25,18 +25,24 @@ export async function listZipEntries(file: File): Promise<ZipEntry[]> {
   return entries
 }
 
+// JSZip's 'string' type returns a binary (Latin-1) string — use uint8array + TextDecoder for correct UTF-8
+async function readEntryAsUtf8(entry: JSZip.JSZipObject): Promise<string> {
+  const bytes = await entry.async('uint8array')
+  return new TextDecoder('utf-8').decode(bytes)
+}
+
 /**
- * Extrai o conteúdo de um arquivo específico dentro do ZIP como string.
+ * Extrai o conteúdo de um arquivo específico dentro do ZIP como string UTF-8.
  */
 export async function extractFileFromZip(file: File, targetPath: string): Promise<string> {
   const zip = await JSZip.loadAsync(file)
   const entry = zip.file(targetPath)
   if (!entry) throw new Error(`Arquivo não encontrado no ZIP: ${targetPath}`)
-  return entry.async('string')
+  return readEntryAsUtf8(entry)
 }
 
 /**
- * Retorna todos os arquivos .html do ZIP, extraindo o primeiro encontrado por padrão.
+ * Retorna todos os arquivos .html do ZIP com conteúdo em UTF-8.
  */
 export async function extractHtmlFromZip(file: File): Promise<{ path: string; content: string }[]> {
   const zip = await JSZip.loadAsync(file)
@@ -45,7 +51,7 @@ export async function extractHtmlFromZip(file: File): Promise<{ path: string; co
   for (const path of htmlFiles) {
     const entry = zip.file(path)
     if (entry && !entry.dir) {
-      const content = await entry.async('string')
+      const content = await readEntryAsUtf8(entry)
       results.push({ path, content })
     }
   }

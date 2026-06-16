@@ -1,25 +1,118 @@
-# PROMPT.md — Instruções para a IA construir o sistema
-# WebKeeper Elementor Exporter
-# Consultar sempre junto com: README.md · ARCHITECTURE.md · DEVELOPMENT_RULES.md · VISION.md
+# PROMPT.md — WebKeeper 2Elementor
+# Principal Software Architect | AI Systems Engineer | Elementor Reverse Engineering Specialist
+# Consultar sempre junto com: ARCHITECTURE.md · DEVELOPMENT_RULES.md · VISION.md
 
 ---
 
-## IDENTIDADE
+## ROLE
 
-Você é um arquiteto de software veterano, WordPress/Elementor Specialist, com 15 anos de experiência.
-Especializado em React, TypeScript, Tailwind, Vite, Elementor internals e arquitetura SaaS.
+Você não é apenas um programador.
 
-> Antes de qualquer ação: leia README.md, ARCHITECTURE.md, DEVELOPMENT_RULES.md e VISION.md.
+Você é o **Arquiteto Principal** responsável por construir o mecanismo de conversão
+mais preciso do mercado entre diferentes fontes de layout e o ecossistema Elementor.
+
+Especializado em: React, TypeScript, Tailwind, Vite, Elementor internals,
+Clean Architecture, Computer Vision, AI Systems Engineering e arquitetura SaaS.
+
+> Antes de qualquer ação: leia ARCHITECTURE.md, DEVELOPMENT_RULES.md e VISION.md.
 > Esses arquivos são a fonte da verdade do projeto — nunca os ignore.
 
 ---
 
 ## MISSÃO
 
-Construir uma aplicação web que converta HTML e ZIP em JSON compatível com Elementor (WordPress),
-preservando 100% do design original, com interface premium dark mode.
+Construir o motor de engenharia reversa mais preciso do mercado para transformar
+qualquer representação visual de uma página em uma estrutura nativa, limpa e
+totalmente editável do Elementor.
 
-Deploy: **GitHub + Hostinger via FTP**. Sem Vercel. Sem servidores externos.
+O sucesso não é medido pela quantidade de código produzido.
+É medido pela **taxa de fidelidade** entre o projeto original e o resultado
+importado no Elementor.
+
+Nunca implemente soluções paliativas. Nunca trate um caso específico.
+Corrija sempre a **causa raiz**.
+
+Deploy atual: **GitHub + Hostinger via FTP**. Sem Vercel. Sem servidores externos.
+
+---
+
+## VISÃO DO PRODUTO
+
+O WebKeeper 2Elementor não é um conversor simples.
+É um **ecossistema de reconstrução inteligente de páginas**.
+
+Entradas suportadas (atuais e futuras):
+
+| Entrada | Status |
+|---|---|
+| HTML | ✅ Ativo |
+| ZIP | ✅ Ativo |
+| Imagem / Screenshot | ✅ Ativo |
+| URL | Roadmap |
+| Figma | Futuro |
+| PSD | Futuro |
+| PDF | Futuro |
+
+Todas devem convergir para o **mesmo núcleo de inteligência**.
+Nunca criar pipelines independentes por formato de entrada.
+
+---
+
+## FILOSOFIA DE ENGENHARIA
+
+O sistema deve pensar como um arquiteto humano — nunca apenas converter código.
+Ele deve compreender a **intenção semântica do layout**.
+
+Durante toda conversão, o sistema deve responder:
+- "Este bloco é um Card? Um Hero? Um CTA? Um Grid? Uma Timeline?"
+- "Este elemento tem um widget Elementor nativo equivalente?"
+- "Esta estrutura é semântica ou apenas visual?"
+
+A conversão deve ser **semântica, nunca apenas sintática**.
+
+Cada melhoria implementada deve beneficiar **todas as conversões futuras** —
+nunca apenas resolver um caso específico com uma condicional isolada.
+
+---
+
+## PRINCÍPIOS FUNDAMENTAIS — PIPELINE
+
+Toda conversão **obrigatoriamente** passa pelas seguintes etapas:
+
+```
+Entrada
+  ↓ Parser
+  ↓ Modelo Semântico
+  ↓ Reconhecimento (IA ou heurístico)
+  ↓ Modelo Universal
+  ↓ Conversão Elementor
+  ↓ Validação Estrutural
+  ↓ Validação Visual
+  ↓ Score de Similaridade
+  ↓ Correção Inteligente (se score insuficiente)
+  ↓ Exportação
+```
+
+A exportação **nunca** ocorre antes da validação completa.
+
+---
+
+## PIPELINE INTELIGENTE (iterativo)
+
+O pipeline é iterativo — nunca executa apenas uma conversão:
+
+```
+Primeira geração
+  ↓ Comparação
+  ↓ Detecção de divergências
+  ↓ Correções automáticas
+  ↓ Nova geração
+  ↓ Novo score
+  ↓ Nova iteração (se necessário)
+  ↓ Exportação
+```
+
+O sistema deve **aprender durante o próprio processo**.
 
 ---
 
@@ -28,36 +121,110 @@ Deploy: **GitHub + Hostinger via FTP**. Sem Vercel. Sem servidores externos.
 | Camada | Tecnologia |
 |---|---|
 | Frontend | React 19 + TypeScript (strict) |
-| Estilo | Tailwind CSS |
+| Estilo | Tailwind CSS v3 |
 | Build | Vite |
 | Ícones | Lucide Icons |
-| ZIP | JSZip (CDN ou npm) |
+| ZIP | JSZip |
 | Deploy | GitHub Actions → FTP Hostinger |
+| IA Vision | Cloudflare Worker → Gemini 2.5 Flash → OpenRouter → Groq → Grok |
 
-> Se o ambiente não suportar build, usar Vanilla JS com módulos ES como fallback.
-> Documentar a escolha em ARCHITECTURE.md com `// [TECH DECISION]`.
+> Documentar toda decisão técnica em ARCHITECTURE.md com `// [TECH DECISION]`.
 
 ---
 
-## REGRAS DE CONDUTA DA IA
+## ARQUITETURA — CLEAN ARCHITECTURE
 
-### Antes de codificar — obrigatório
-1. Estudar o pedido e mapear impacto no código existente
-2. Formular **4 a 6 perguntas** sobre requisitos ambíguos — nunca assumir
-3. Montar roteiro detalhado e obter validação antes de começar
-4. Executar informando avanços, próximos passos e etapas restantes
+Separação absoluta entre camadas. Nenhuma camada conhece detalhes da outra.
+Toda comunicação ocorre por contratos bem definidos.
 
-### Ao entregar código
-- Mostrar **apenas o código modificado ou novo**
-- Indicar o **nome do arquivo** antes de cada trecho
-- Explicar em **até 3 linhas** o que foi alterado
-- Sugestões opcionais separadas ao final
-- Escrever relatório de 1–2 parágrafos: segurança, escalabilidade, melhorias
+```
+Core
+  Application
+    Domain
+      Services
+        Adapters
+          Providers
+            Infrastructure
+              Parser · AI · Renderer · Exporter · Validation · Similarity Engine
+```
 
-### Se encontrar bug
-Ver fluxo completo em DEVELOPMENT_RULES.md → seção "Caça-bugs".
+Estrutura de pastas atual:
 
-**Se tiver dúvida — pare e pergunte. Nunca assuma.**
+```
+src/
+  components/         ← React UI (PascalCase)
+    UploadPanel/
+    AnalysisPanel/
+    OutputPanel/
+    ConfigDashboard/
+    JsonViewer/
+    SectionCard/
+  services/           ← lógica pura (sem React)
+    html-parser.ts         ← HTML → LayoutNode[]
+    section-detector.ts    ← detecta seções semanticamente
+    elementor-mapper.ts    ← LayoutNode → ElementorElement[]
+    elementor-exporter.ts  ← monta JSON final (version 0.4)
+    zip-handler.ts         ← JSZip wrapper (UTF-8 via uint8array)
+    token-resolver.ts      ← substitui tokens {{}} no HTML
+    validator.ts           ← valida JSON antes de exportar
+    vision-registry.ts     ← orquestra providers de IA Vision
+    providers/             ← gemini.ts, openrouter.ts, groq.ts, claude.ts
+  hooks/              ← React hooks
+    useConversion.ts
+    useHistory.ts
+    useTokens.ts
+  utils/              ← funções puras
+    generateId.ts
+    constants.ts           ← ELEMENTOR_PAGE_CSS, WEBKEEPER_FIRST_WIDGET_SETUP
+    elementor-renderer.ts  ← ElementorTemplate → HTML (preview visual)
+    color-extractor.ts
+    vision-prompt.ts       ← prompts para providers locais de IA
+  types/              ← interfaces TypeScript
+    elementor.types.ts
+    layout.types.ts
+    app.types.ts
+    vision.types.ts
+cloudflare-worker/    ← Worker com cascata de 4 providers de IA
+prompts/              ← arquivos de prompt editáveis (este arquivo + HTML-GENERATION.md)
+```
+
+---
+
+## ENTRADAS SUPORTADAS
+
+Todos os formatos utilizam o **mesmo núcleo interno**:
+
+```
+HTML   ─────────────────────────────────→ Parser HTML → Modelo Universal
+ZIP    → Extração ──────────────────────→ Parser HTML → Modelo Universal
+Imagem → Vision AI ─────────────────────────────────→ Modelo Universal
+URL    → Crawler → HTML (futuro) ───────→ Parser HTML → Modelo Universal
+```
+
+Nunca duplicar lógica de parsing entre formatos de entrada.
+
+---
+
+## MODELO UNIVERSAL
+
+Antes de gerar qualquer JSON Elementor, toda informação deve existir em um
+**modelo intermediário independente do Elementor** que representa a intenção
+semântica do layout:
+
+```typescript
+// Modelo conceitual — representa intenção, não markup
+interface UniversalNode {
+  type: 'container' | 'heading' | 'text' | 'image' | 'button' | 'list' | 'divider' | 'video' | 'html'
+  semanticRole: 'hero' | 'header' | 'nav' | 'card' | 'cta' | 'footer' | 'unknown'
+  layout: { direction: 'row' | 'column'; align?: string; justify?: string; gap?: number }
+  styles: { background?: string; color?: string; padding?: Spacing; border?: Border }
+  typography?: { family?: string; size?: number; weight?: number }
+  children: UniversalNode[]
+  raw?: string // HTML original preservado para fallback
+}
+```
+
+Somente após o modelo consolidado o Exportador Elementor pode ser executado.
 
 ---
 
@@ -69,23 +236,23 @@ Ver fluxo completo em DEVELOPMENT_RULES.md → seção "Caça-bugs".
   "title": "string",
   "type": "page | header | footer | popup | post | error-404",
   "version": "0.4",
-  "page_settings": {},
+  "page_settings": { "custom_css": "...", "body_background_color": "#000000" },
   "content": []
 }
 ```
 
-### Hierarquia de elementos — dois modos
+### Hierarquia — dois modos de geração
 
-**Modo A — Container (Elementor 3.6+):**
+**Modo A — Container (Elementor 3.6+, widgets nativos):**
 ```json
 {
-  "id": "8-char hex",
+  "id": "8-char-hex",
   "elType": "container",
   "isInner": false,
   "settings": {
     "content_width": "full | boxed",
     "flex_direction": "row | column",
-    "padding": { "unit": "px", "top": "0", "right": "0", "bottom": "0", "left": "0", "isLinked": true },
+    "padding": { "unit": "px", "top": "0", "right": "0", "bottom": "0", "left": "0" },
     "background_background": "classic",
     "background_color": "#hex"
   },
@@ -93,97 +260,107 @@ Ver fluxo completo em DEVELOPMENT_RULES.md → seção "Caça-bugs".
 }
 ```
 
-**Modo B — Section → Column → Widget (legado + HTML complexo):**
+**Modo B — Section → Column → Widget HTML (HTML complexo / Tailwind):**
 ```json
 // Nível 1: Seção
 { "id": "hex8", "elType": "section", "isInner": false,
   "settings": { "stretch_section": "section-stretched", "layout": "full_width",
-    "background_background": "classic", "background_color": "#000000",
-    "padding": { "unit": "px", "top": "0", "right": "0", "bottom": "0", "left": "0", "isLinked": true }
-  }, "elements": [] }
-
+    "background_background": "classic", "background_color": "#000000" }, "elements": [] }
 // Nível 2: Coluna
-{ "id": "hex8", "elType": "column", "isInner": false,
-  "settings": { "_column_size": 100, "_inline_size": null }, "elements": [] }
-
-// Nível 3: Widget HTML (preserva Tailwind/CSS customizado 100%)
-{ "id": "hex8", "elType": "widget", "widgetType": "html", "isInner": false,
-  "settings": { "html": "<style>/* estilos isolados */</style>\n<!-- HTML da seção -->" },
-  "elements": [] }
+{ "id": "hex8", "elType": "column", "settings": { "_column_size": 100 }, "elements": [] }
+// Nível 3: Widget HTML (preserva Tailwind/CSS 100%)
+{ "id": "hex8", "elType": "widget", "widgetType": "html",
+  "settings": { "html": "<style>/* estilos isolados */</style>\n<!-- HTML -->" }, "elements": [] }
 ```
+
+### Widgets nativos suportados
+
+| widgetType | settings principais |
+|---|---|
+| `heading` | `title`, `header_size: "h1–h6"`, `title_color`, `align` |
+| `text-editor` | `editor: "<p>...</p>"`, `text_color`, `align` |
+| `image` | `image: {url, id, alt}`, `image_size`, `align` |
+| `button` | `text`, `link: {url, is_external, nofollow}`, `button_type: ""`, `background_color` |
+| `icon-list` | `icon_list: [{id, text, link, icon}]`, `layout` |
+| `divider` | `color: {color}`, `gap: {unit, size}` |
+| `video` | `video_type`, `youtube_url`, `autoplay`, `controls` |
+| `spacer` | `space: {unit, size}` |
+| `html` | `html: "string"` |
+
+> ⚠️ `button_type` deve ser `""` (vazio) — nunca `"info"` (causa preset azul do Elementor).
+
+### IDs Elementor
+```typescript
+// utils/generateId.ts — sempre único por conversão, nunca reutilizar IDs
+export const generateId = (): string => Math.random().toString(16).slice(2, 10)
+```
+
+### Regras de importação
+- Salvar como `.json` (ou `.zip` com múltiplos `.json`)
+- Importar via Elementor → Templates → Import
+- `version` SEMPRE `"0.4"` · `elements` de widgets SEMPRE `[]`
+
+---
+
+## MAPEAMENTO HTML → WIDGET ELEMENTOR
+
+| Elemento HTML | Widget Elementor |
+|---|---|
+| `<h1>` – `<h6>` | `heading` |
+| `<p>`, `<span>`, `<blockquote>` | `text-editor` |
+| `<img>` | `image` |
+| `<a class="btn*">`, `<button>`, `<a px-* py-* rounded*>` | `button` |
+| `<ul>`, `<ol>` (texto do `<li>` ou filho `<a>`) | `icon-list` |
+| `<hr>` | `divider` |
+| `<iframe>` YouTube/Vimeo | `video` |
+| `<div class="flex*">`, `<div class="grid*">` | container `flex_direction: row` |
+| `<div>` genérico | container `flex_direction: column` |
+| `<script>`, `<style>`, `<svg>`, `<details>`, `<canvas>` | `html` (raw, preservado) |
+
+> `<script>` NUNCA é convertido para widget nativo — sempre `html` raw.
 
 ### Decisão de mapeamento
 | Situação | Usar |
 |---|---|
-| Elemento simples com equivalente nativo | `container → widget(heading/text-editor/image/button/icon-list)` |
-| HTML com Tailwind, glows, animações | `section → column → widget(html)` com `<style>` isolado injetado |
+| Elemento simples com equivalente nativo | Modo A: `container → widget nativo` |
+| HTML com Tailwind, animações, glows | Modo B: `section → column → widget(html)` com `<style>` isolado |
 
-Documentar com `// [MAPPING DECISION]: motivo` em todos os casos não óbvios.
+Documentar com `// [MAPPING DECISION]: motivo` em casos não óbvios.
 
-### Injeção obrigatória de estilos no widget HTML
-Para layouts WebKeeper (gold/dark), injetar no início do campo `html`:
+### CSS global e Tailwind CDN
 ```html
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-  .glow-gold { box-shadow: 0 0 20px rgba(234,179,8,0.4), 0 0 40px rgba(234,179,8,0.2); }
-  .text-gold  { color: #EAB308; }
-  .bg-gold    { background-color: #EAB308; }
-  .btn-gold   { background: linear-gradient(135deg,#EAB308,#CA8A04); color:#000; font-weight:600; transition:all .3s; }
-  .btn-gold:hover { background: linear-gradient(135deg,#FCD34D,#EAB308); }
-</style>
+<!-- WEBKEEPER_FIRST_WIDGET_SETUP — injetado UMA VEZ na primeira seção -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config = { theme: { extend: { colors: { gold: '#EAB308' } } } }</script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 ```
 
-### Widgets nativos suportados
-| widgetType | settings principais |
-|---|---|
-| `heading` | `title`, `header_size: "h1–h6"`, `align` |
-| `text-editor` | `editor: "<p>...</p>"`, `align` |
-| `image` | `image: {url,id,alt}`, `image_size`, `align` |
-| `button` | `text`, `link: {url,is_external,nofollow}`, `align`, `size`, `button_type` |
-| `icon-list` | `icon_list: [{id,text,link,icon}]`, `layout` |
-| `divider` | `color: {color}`, `gap: {unit,size}` |
-| `video` | `video_type`, `hosted_url`, `autoplay`, `controls` |
-| `spacer` | `space: {unit,size}` |
-| `html` | `html: "string"` |
-
-### IDs Elementor
-```js
-// Gerar em utils/generateId.ts
-export const generateId = (): string =>
-  Math.random().toString(16).slice(2, 10);
-// Sempre único por conversão — nunca reutilizar
-```
-
-### Regras de importação no Elementor
-- Salvar como `.json` (ou `.zip` com múltiplos `.json`)
-- Importar via Elementor > Templates > Import ou ícone de pasta no editor
-- `version` SEMPRE `"0.4"`
-- `elements` de widgets SEMPRE `[]`
-- `page_settings` pode ser `[]` ou `{}`
+CSS global em `constants.ts → ELEMENTOR_PAGE_CSS` → `page_settings.custom_css`.
+Não duplicar CSS por widget.
 
 ---
 
 ## VARIÁVEIS ATÔMICAS (tokens dinâmicos)
 
-Antes de exportar, substituir no HTML:
 | Token | Substituído por |
 |---|---|
-| `{{WHATSAPP_LINK}}` | `https://wa.me/{{numero}}?text={{mensagem}}` |
-| `{{EMAIL_CONTATO}}` | e-mail configurado pelo usuário |
+| `{{WHATSAPP_LINK}}` | `https://wa.me/NUMERO?text=MENSAGEM` |
+| `{{EMAIL_CONTATO}}` | e-mail configurado |
 | `{{INSTAGRAM_URL}}` | URL Instagram |
 | `{{LINKEDIN_URL}}` | URL LinkedIn |
 | `{{FACEBOOK_URL}}` | URL Facebook |
-| `{{NOME_EMPRESA}}` | nome/marca para copyright |
+| `{{NOME_EMPRESA}}` | nome/marca |
 | `{{TELEFONE}}` | link `tel:...` |
 
-Lógica de substituição em `src/services/token-resolver.ts`.
-Substituição ocorre em tempo real antes de gerar o JSON final.
+Lógica em `src/services/token-resolver.ts`.
+Substituição em tempo real antes de gerar o JSON final.
 
 ---
 
 ## DETECÇÃO AUTOMÁTICA DE SEÇÕES
 
-O detector (`src/services/section-detector.ts`) identifica:
+`src/services/section-detector.ts` — detecção semântica por sinais HTML:
+
 | Seção | Sinal de detecção |
 |---|---|
 | `header` | `<header>`, `<nav>`, primeira `<div>` com logo + links |
@@ -214,173 +391,217 @@ O detector (`src/services/section-detector.ts`) identifica:
 
 ---
 
-## ARQUIVOS DE SAÍDA GERADOS
+## VALIDAÇÃO AUTOMÁTICA
 
-| Arquivo | Conteúdo |
+Execute automaticamente após cada geração de JSON:
+
+| Validação | O que verifica |
 |---|---|
-| `page.json` | Página completa (todas as seções) |
-| `header.json` | Apenas header/nav |
-| `hero.json` | Apenas hero section |
-| `services.json` | Seções de serviços/soluções |
-| `faq.json` | FAQ accordion |
-| `footer.json` | Footer corporativo |
-| `sections.zip` | Todos os arquivos acima em um ZIP |
+| Estrutural | Hierarquia correta, IDs únicos, sem elementos órfãos |
+| Visual | Cores, tipografia, espaçamentos preservados |
+| Semântica | Widget correto para cada tipo de elemento |
+| CSS | Classes Tailwind e estilos inline presentes |
+| Assets | URLs de imagem acessíveis e corretas |
+| Responsiva | Containers com `content_width` adequado |
+| Elementor | `version: "0.4"`, `elements: []` em widgets |
+
+Nenhuma exportação ocorre sem essas verificações.
+
+---
+
+## SCORE DE SIMILARIDADE
+
+Toda conversão gera uma nota de qualidade que orienta as próximas iterações:
+
+| Dimensão | Score exemplo |
+|---|---|
+| Estrutura | 98% |
+| Layout | 96% |
+| Containers | 100% |
+| Tipografia | 94% |
+| Responsividade | 92% |
+| Widgets | 97% |
+| Assets | 100% |
+| **Score Geral** | **96,8%** |
+
+---
+
+## IA COMO REVISORA
+
+A IA não apenas gera código — é uma **camada de revisão especializada**:
+
+- Interpretar HTML, CSS e imagens
+- Reconhecer componentes semânticos (Card, Hero, CTA...)
+- Sugerir widgets Elementor corretos
+- Validar containers e hierarquias
+- Revisar JSON gerado
+- Detectar perda de informações entre entrada e saída
+- Comparar visualmente original vs. reconstrução
+- Identificar diferenças e sugerir melhorias
+- Gerar correções automaticamente
+
+---
+
+## MODO INVESTIGAÇÃO
+
+Quando a conversão apresentar falhas significativas,
+**suspenda qualquer correção** e produza relatório com:
+
+1. Todas as divergências entre entrada e saída
+2. Causa raiz de cada problema
+3. Arquivo e função responsáveis
+4. Etapa do pipeline onde ocorreu a perda
+5. Impacto da falha
+6. Plano de correção priorizado
+7. Testes necessários para validar a solução
+
+**Somente após essa análise o código poderá ser alterado.**
+
+---
+
+## COMPORTAMENTO ESPERADO
+
+### Antes de codificar
+1. Estudar o pedido e mapear impacto no código existente
+2. Identificar funções e utilitários existentes reutilizáveis (DRY rigoroso)
+3. Montar roteiro e obter validação antes de executar
+4. **Se tiver dúvida — pare e pergunte. Nunca assuma.**
+
+### Ao entregar código
+- Mostrar **apenas o código modificado ou novo**
+- Indicar o nome do arquivo antes de cada trecho
+- Explicar em até 3 linhas o que foi alterado
+- Nenhuma solução paliativa — corrigir **sempre a causa raiz**
+
+### Proibições absolutas
+- ❌ Escrever código apenas para "fazer passar"
+- ❌ Criar condicionais específicas para um HTML isolado
+- ❌ Duplicar funções ou lógicas existentes
+- ❌ Modificar arquivos `.md` sem solicitação explícita
 
 ---
 
 ## INTERFACE — 3 COLUNAS (dark mode)
 
-### Coluna Esquerda — Input (38%)
+### Coluna Esquerda — Entrada (38%)
 - Abas: **HTML** | **ZIP** | **IMAGEM**
-- HTML: textarea com syntax highlight básico + upload + drag-drop
+- HTML: textarea + upload + drag-drop + botão visualização (abre HTML original em nova aba)
 - ZIP: dropzone → lista de arquivos → seleção
-- Imagem: dropzone → preview → análise heurística por Canvas API → confiança (%)
+- Imagem: dropzone → preview → análise Vision AI → confiança (%)
 - Botão "Analisar" (rápido) separado de "Converter" (gera JSON)
 - Contador: linhas · chars · tamanho
-- Botão Limpar (X)
 
 ### Coluna Central — Análise (22%)
 - Cards de estatísticas: containers, headings, parágrafos, imagens, botões, listas
 - Árvore colapsável dos elementos detectados
-- Badges: confiança por seção (para imagens)
-- Warnings em amarelo · sucesso em verde
+- Badges de confiança por seção
+- Warnings amarelo · sucesso verde
 
-### Coluna Direita — Output (40%)
+### Coluna Direita — Exportação (40%)
+- Card por seção: nome, botão "Copiar JSON", botão "Baixar .json"
+- Status: ✓ válido / ⚠ warning / ✗ erro
+- Botões: "Baixar Página Completa" · "Baixar ZIP" · "Visualização"
+- **Botão "Gerar Novamente"** — executa nova iteração usando:
+  HTML original + JSON atual + diferenças detectadas + score anterior
+  (não reinicia o processo — refina a partir do estado atual)
+- Syntax highlight: keys roxo · strings verde · números laranja
 
-**Aba 1 — Exportador JSON:**
-- Card por seção: nome, descrição, botão "Copiar JSON", botão "Baixar .json"
-- Status por card: ✓ válido / ⚠ warning / ✗ erro
-- Botões globais: "Baixar Página Completa" · "Baixar Todas as Seções (.zip)"
-- Syntax highlight: keys roxo · strings verde · números laranja · bool/null azul
-
-**Aba 2 — Preview Visual:**
-- `<iframe>` sandboxado com HTML original
-- Toggle: HTML original ↔ HTML com tokens resolvidos
-- `<details>/<summary>` (FAQ) funcionando de forma fluida
-
-### Dashboard de Configurações (painel lateral ou modal)
+### Dashboard de Configurações (modal)
 - WhatsApp: número + mensagem padrão → preview do link gerado
 - E-mail, Instagram, LinkedIn, Facebook, Site, Nome da empresa
-- Atualização em tempo real de todos os HTMLs mapeados
 
 ### Atalhos de teclado
-- `Ctrl+Enter` → Converter
+- `Ctrl+Enter` → Analisar
 - `Ctrl+Shift+C` → Copiar JSON
 - `Ctrl+S` → Baixar JSON
 - `Ctrl+Z` → Limpar
 
 ---
 
-## PONTOS DE EXTENSÃO (comentar no código)
+## PAINEL DE DIAGNÓSTICO
 
-```ts
-// [FUTURE: auth] — adicionar autenticação aqui (Fase 2)
-// [FUTURE: billing] — verificar cota de conversões (Fase 2)
+Exibir em tempo real durante a conversão:
+- Pipeline: etapa atual + tempo gasto por etapa
+- Tokens de IA utilizados
+- Score de similaridade por dimensão
+- Diferenças encontradas e quantidade de correções
+- Widgets identificados e containers gerados
+- Warnings, erros e sugestões automáticas
+
+---
+
+## ARQUIVOS DE SAÍDA
+
+| Arquivo | Conteúdo |
+|---|---|
+| `page.json` | Página completa (todas as seções) |
+| `header.json` | Apenas header/nav |
+| `hero.json` | Apenas hero section |
+| `services.json` | Seções de serviços |
+| `faq.json` | FAQ accordion |
+| `footer.json` | Footer |
+| `paginas.zip` | Todos os arquivos + assets de imagem base64 |
+
+---
+
+## PONTOS DE EXTENSÃO
+
+Comentar no código para orientar implementações futuras:
+
+```typescript
+// [FUTURE: auth]         — autenticação de usuário (Fase 2)
+// [FUTURE: billing]      — cota de conversões (Fase 2)
 // [FUTURE: api-endpoint] — mover lógica para API REST (Fase 3)
-// [FUTURE: wp-plugin] — endpoint para publicação direta no WordPress (Fase 4)
-// [FUTURE: ai-generate] — integração com modelo de IA para geração (Fase 3)
-// [FUTURE: marketplace] — publicar seção como template vendável (Fase 5)
+// [FUTURE: wp-plugin]    — publicação direta no WordPress (Fase 4)
+// [FUTURE: ai-generate]  — geração por linguagem natural (Fase 3)
+// [FUTURE: marketplace]  — templates vendáveis (Fase 5)
+// [FUTURE: url-input]    — crawler de URL (próxima iteração)
+// [FUTURE: score-engine] — score de similaridade visual (próxima iteração)
 ```
 
 ---
 
-## DEPLOY — GitHub + Hostinger (sem Vercel)
+## DEPLOY — GitHub + Hostinger
 
-### Fluxo
 ```
 push → main
   ↓ GitHub Actions
-  ↓ npm ci + npm run build
-  ↓ FTP Upload de dist/ → Hostinger public_html/
+  ↓ npm ci && npm run build
+  ↓ FTP Upload dist/ → Hostinger public_html/
 ```
 
-### Secrets necessários no GitHub
-| Secret | Descrição |
+| Secret GitHub | Valor |
 |---|---|
-| `FTP_SERVER` | ex: ftp.seudominio.com.br |
-| `FTP_USERNAME` | usuário FTP da Hostinger |
+| `FTP_SERVER` | ftp.seudominio.com.br |
+| `FTP_USERNAME` | usuário FTP |
 | `FTP_PASSWORD` | senha FTP |
 | `FTP_PORT` | 21 |
-| `FTP_REMOTE_DIR` | /public_html/elementor-exporter/ |
+| `FTP_REMOTE_DIR` | /public_html/2elementor/ |
 
-Arquivo completo: `.github/workflows/deploy.yml`
-```yaml
-name: Deploy to Hostinger
-on:
-  push:
-    branches: [main]
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: '20' }
-      - run: npm ci && npm run build
-      - uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          port: ${{ secrets.FTP_PORT }}
-          local-dir: ./dist/
-          server-dir: ${{ secrets.FTP_REMOTE_DIR }}
-          dangerous-clean-slate: false
-          exclude: |
-            **/.git*/**
-            **/node_modules/**
-```
+Arquivo: `.github/workflows/deploy.yml`
+Secret `VITE_PROXY_URL` = `https://2elementor.web3cafe.workers.dev`
 
 ---
 
-## ENTREGA ESPERADA
+## DEFINIÇÃO DE SUCESSO
 
-**Código (`src/`):**
-```
-src/
-  components/         ← componentes React (PascalCase)
-    UploadPanel/
-    AnalysisPanel/
-    OutputPanel/
-    ConfigDashboard/
-    JsonViewer/
-    SectionCard/
-  pages/              ← páginas (se multi-rota)
-  services/           ← lógica pura (sem React)
-    html-parser.ts    ← HTML → LayoutNode[]
-    section-detector.ts ← detecta seções automaticamente
-    elementor-mapper.ts ← LayoutNode → ElementorElement[]
-    elementor-exporter.ts ← monta JSON final (version 0.4)
-    image-analyzer.ts ← Canvas API → seções estimadas
-    zip-handler.ts    ← JSZip wrapper
-    token-resolver.ts ← substitui tokens {{}} no HTML
-    validator.ts      ← valida JSON Elementor antes de exportar
-  hooks/              ← hooks React (useNomeHook)
-    useConversion.ts
-    useHistory.ts
-    useTokens.ts
-  utils/              ← funções puras utilitárias
-    generateId.ts     ← gera hex de 8 chars
-    formatBytes.ts
-    syntaxHighlight.ts
-  types/              ← interfaces TypeScript
-    elementor.types.ts
-    layout.types.ts
-    app.types.ts
-```
+O projeto será considerado maduro quando:
 
-**Infraestrutura:**
-- `.github/workflows/deploy.yml`
-- `.env.example`
-- `.gitignore`
-- `CHANGELOG.md`
-- `LICENSE` (MIT)
+- Qualquer HTML moderno puder ser convertido com **score > 90%**
+- Imagens e screenshots seguirem o **mesmo pipeline** do HTML
+- A estrutura Elementor gerada for **limpa, organizada e totalmente editável**
+- O sistema gerar **scores de qualidade mensuráveis** por conversão
+- Existir **validação automática** antes de toda exportação
+- O pipeline for **iterativo**, aprendendo com cada tentativa
+- A arquitetura for **modular**, preparada para novos formatos sem reescrever o núcleo
 
-**Documentação (gerada em paralelo):**
-- `README.md` — instalação, uso, deploy
-- `ARCHITECTURE.md` — fluxo técnico, módulos, entidades
-- `DEVELOPMENT_RULES.md` — padrões, convenções, caça-bugs
-- `VISION.md` — roadmap de versões
+---
 
-> Todos os arquivos `.md` gerados devem ser consultados a cada nova alteração.
-> Nunca modificar arquivos de documentação sem solicitação explícita.
+## REGRA ABSOLUTA
+
+Em todas as implementações, priorize **qualidade arquitetural** acima de velocidade de entrega.
+
+Uma solução correta, genérica e reutilizável vale mais do que dezenas de correções específicas.
+
+**Você está construindo um produto de nível enterprise — referência em conversão
+inteligente para Elementor. Cada decisão deve refletir esse objetivo.**

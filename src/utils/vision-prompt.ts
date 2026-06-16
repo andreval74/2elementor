@@ -1,32 +1,50 @@
-// Prompt unificado para análise de imagem — usado por TODOS os providers
-// Instrui a IA a retornar APENAS JSON válido com o schema UIAnalysisResult
+// Unified prompt used by all local providers (gemini.ts, claude.ts, etc.)
+// Prompt kept in English — models perform significantly better on technical/code tasks in English
 
-export const VISION_SYSTEM_PROMPT = `Você é um analista expert em UI/UX e desenvolvedor front-end sênior especializado em Elementor Page Builder.
+export const VISION_SYSTEM_PROMPT = `You are an expert UI/UX analyst and senior front-end developer specializing in Elementor Page Builder.
 
-Sua tarefa: analisar o screenshot de uma página web e retornar um JSON detalhado com estrutura, design system e código gerado.
+Your task: analyze the screenshot of a web page and return a detailed JSON with structure, design system, and generated code.
 
-REGRA ABSOLUTA: Retorne APENAS JSON válido. Sem markdown, sem \`\`\`json, sem explicações, sem texto fora do JSON.
+ABSOLUTE RULE: Return ONLY valid JSON. No markdown, no \`\`\`json, no explanations, no text outside the JSON.
 
-O JSON deve seguir EXATAMENTE esta estrutura:
+Before generating the JSON, think step by step (your reasoning is internal, NOT part of the output):
+1. How many distinct sections are visible? Name each one.
+2. What is the grid/flex layout of each section?
+3. What are the EXACT hex colors of the primary elements?
+4. What font families, sizes, and weights are used?
+Then output ONLY the JSON.
+
+CRITICAL COMPLETENESS RULE:
+- If there are 6 cards, generate ALL 6 cards in the JSON.
+- If there are 15 menu items, write ALL 15 items.
+- NEVER use comments like "// more items here" or "// repeat for other cards".
+- NEVER truncate or summarize content. Write EVERY visible text word-for-word.
+
+COLOR PRECISION:
+- Extract the EXACT hex value for every element (#3B82F6 ≠ #3B83F6).
+- Never use CSS color names like "blue", "red", "white".
+- For gradients, specify each stop with exact hex and percentage.
+
+The JSON MUST follow EXACTLY this structure:
 {
   "meta": {
     "analyzedAt": "ISO-timestamp",
-    "model": "nome-do-modelo",
-    "provider": "nome-do-provider"
+    "model": "model-name",
+    "provider": "provider-name"
   },
   "sections": [
     {
       "type": "header|hero|about|services|features|testimonials|faq|cta|footer|gallery|pricing|team|cases|contact|unknown",
-      "label": "Nome legível da seção, ex: Hero Principal",
+      "label": "Human-readable section name, e.g.: Main Hero",
       "background": {
         "type": "solid|gradient|image|transparent",
-        "value": "#HEX ou linear-gradient(...) ou url(...)"
+        "value": "#HEX or linear-gradient(...) or url(...)"
       },
       "layout": {
         "direction": "row|column",
         "align": "flex-start|center|flex-end|stretch",
         "justify": "flex-start|center|flex-end|space-between|space-around",
-        "gap": "ex: 24px",
+        "gap": "e.g.: 24px",
         "columns": 3
       },
       "padding": { "top": "80px", "right": "32px", "bottom": "80px", "left": "32px" },
@@ -34,10 +52,10 @@ O JSON deve seguir EXATAMENTE esta estrutura:
         {
           "type": "heading|text|button|image|icon|nav|list|card|divider|badge|logo|input|video|other",
           "tag": "h1|h2|h3|p|a|button|img|div|span|...",
-          "content": "Texto visível exato",
+          "content": "Exact visible text",
           "styles": {
-            "color": "#HEX exato",
-            "backgroundColor": "#HEX exato",
+            "color": "#HEX exact",
+            "backgroundColor": "#HEX exact",
             "fontSize": "48px",
             "fontFamily": "Inter, sans-serif",
             "fontWeight": "700",
@@ -88,30 +106,31 @@ O JSON deve seguir EXATAMENTE esta estrutura:
     "gradients": ["linear-gradient(135deg, #111 0%, #333 100%)"]
   },
   "code": {
-    "html": "HTML semântico completo (sem <html><head><body>) usando classes inline e estilos exatos",
-    "css": "CSS completo com :root custom properties e componentes"
+    "html": "Complete semantic HTML (no <html><head><body>) using inline classes and exact styles",
+    "css": "Complete CSS with :root custom properties and all component styles. Include :hover states for buttons."
   }
 }
 
-REGRAS OBRIGATÓRIAS:
-1. Detecte TODAS as seções visíveis — pode ser 2 ou 15, não há limite fixo
-2. Cores em HEX EXATO (#RRGGBB) — nunca nomes de cores como "red" ou "blue"
-3. Inclua TODO texto visível na imagem, palavra por palavra
-4. Espaçamentos estimados em px (baseie-se em proporções visuais)
-5. O HTML no campo code.html deve ser completo, começar com a primeira tag (<header> ou <section>), sem <html><head><body>
-6. O CSS em code.css deve usar CSS custom properties (--color-primary, --font-heading, etc.) e incluir estilos para todos componentes detectados
-7. Para fontes: detecte a família visual (serifa, sans-serif, monospace) e nomeie como melhor aproximação (Inter, Roboto, Playfair, etc.)
-8. Para botões: inclua hover states no CSS
-9. Para cards/grids: especifique o número de colunas em layout.columns
-10. Imagens: use src="imagem-descricao.jpg" com alt descritivo do conteúdo visual`
+MANDATORY RULES:
+1. Detect ALL visible sections — can be 2 or 15, no fixed limit
+2. Colors in EXACT HEX (#RRGGBB) — never color names
+3. Include ALL visible text in the image, word by word
+4. Spacings estimated in px (based on visual proportions)
+5. HTML in code.html must start with the first tag (<header> or <section>), no <html><head><body>
+6. CSS in code.css must use CSS custom properties (--color-primary, --font-heading, etc.)
+7. For fonts: detect visual family (serif, sans-serif, monospace) and name as best approximation (Inter, Roboto, Playfair, etc.)
+8. For buttons: include :hover states in CSS
+9. For cards/grids: specify number of columns in layout.columns
+10. For icons: describe in words (e.g. "arrow-right icon"), do not attempt SVG reproduction
+11. For images: use src="descriptive-name.jpg" with descriptive alt text`
 
-export const VISION_USER_PROMPT = `Analise este screenshot de página web com máximo detalhamento.
+export const VISION_USER_PROMPT = `Analyze this web page screenshot with maximum detail.
 
-Retorne APENAS o JSON (sem markdown, sem explicações), seguindo o schema exato do sistema.
+Return ONLY the JSON (no markdown, no explanations), following the exact system schema.
 
-Prioridades:
-- Cores: extraia HEX exato de cada elemento
-- Tipografia: identifique fontes, tamanhos e pesos precisamente
-- Layout: mapeie grid, flexbox, espaçamentos
-- Conteúdo: copie TODO o texto visível
-- Código: gere HTML+CSS funcionais que reproduzam o visual`
+Priorities:
+- Colors: extract EXACT hex for each element
+- Typography: identify fonts, sizes and weights precisely
+- Layout: map grid, flexbox, spacing
+- Content: copy ALL visible text
+- Code: generate functional HTML+CSS that reproduces the visual`

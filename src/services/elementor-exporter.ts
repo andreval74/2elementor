@@ -4,7 +4,7 @@
 
 import { ELEMENTOR_VERSION, ELEMENTOR_PAGE_CSS } from '@/utils/constants'
 import { mapSingleSection, mapSectionsToElementor } from './elementor-mapper'
-import type { ElementorTemplate, ElementorType } from '@/types/elementor.types'
+import type { ElementorTemplate, ElementorType, ElementorElement } from '@/types/elementor.types'
 import type { Section } from '@/types/layout.types'
 import type { PageAssets } from './css-extractor'
 
@@ -62,6 +62,21 @@ export function exportFullPage(sections: Section[], title = 'Página Completa', 
     is_pro: false,
     page_settings: buildPageSettings(pageAssets),
     content: mapSectionsToElementor(sections, pageAssets?.fontLinks ?? ''),
+  }
+}
+
+/**
+ * Monta o ElementorTemplate a partir de ElementorElement[] gerados pelo vision mapper.
+ * Não depende do pipeline HTML — recebe elementos já convertidos diretamente.
+ */
+export function exportVisionPage(elements: ElementorElement[], title = 'Página Vision'): ElementorTemplate {
+  return {
+    title,
+    type: 'page',
+    version: ELEMENTOR_VERSION,
+    is_pro: false,
+    page_settings: buildPageSettings(),
+    content: elements,
   }
 }
 

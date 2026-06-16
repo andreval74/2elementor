@@ -1,5 +1,5 @@
 const PROXY_URL = import.meta.env.VITE_PROXY_URL ?? ''
-const MAX_CHARS = 15_000
+const MAX_CHARS = 10_000
 
 function prepareHtmlForRefine(rawHtml: string): string {
   const cleanedHtml = rawHtml

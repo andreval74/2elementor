@@ -39,7 +39,7 @@ function stripJsonFences(text) {
 }
 
 async function refineWithGemini(html, pageJson, apiKey) {
-  const MAX = 12_000
+  const MAX = 8_000
   const safeHtml = html.length     > MAX ? html.slice(0, MAX)     + '\n...[truncado]' : html
   const safeJson = pageJson.length > MAX ? pageJson.slice(0, MAX) + '\n...[truncado]' : pageJson
   const userText = `${REFINE_PROMPT}\n\nHTML:\n${safeHtml}\n\nCurrent Elementor JSON:\n${safeJson}`
@@ -51,17 +51,16 @@ async function refineWithGemini(html, pageJson, apiKey) {
       topP: 0.9,
       maxOutputTokens: 6000,
       responseMimeType: 'application/json',
-      thinkingConfig: { thinkingBudget: 0 },
     },
   }
 
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(12_000),
+      signal: AbortSignal.timeout(20_000),
     },
   )
 
@@ -74,7 +73,7 @@ async function refineWithGemini(html, pageJson, apiKey) {
 }
 
 async function refineWithGroq(html, pageJson, apiKey) {
-  const MAX = 10_000
+  const MAX = 8_000
   const safeHtml = html.length     > MAX ? html.slice(0, MAX)     + '\n...[truncado]' : html
   const safeJson = pageJson.length > MAX ? pageJson.slice(0, MAX) + '\n...[truncado]' : pageJson
 
@@ -105,12 +104,12 @@ async function refineWithGroq(html, pageJson, apiKey) {
 }
 
 async function refineWithOpenRouter(html, pageJson, apiKey) {
-  const MAX = 10_000
+  const MAX = 8_000
   const safeHtml = html.length     > MAX ? html.slice(0, MAX)     + '\n...[truncado]' : html
   const safeJson = pageJson.length > MAX ? pageJson.slice(0, MAX) + '\n...[truncado]' : pageJson
 
   const body = {
-    model: 'google/gemma-4-31b-it:free',
+    model: 'meta-llama/llama-4-scout:free',
     messages: [
       { role: 'system', content: REFINE_PROMPT },
       { role: 'user',   content: `HTML:\n${safeHtml}\n\nCurrent Elementor JSON:\n${safeJson}` },
@@ -128,7 +127,7 @@ async function refineWithOpenRouter(html, pageJson, apiKey) {
       'X-Title': 'WebKeeper 2Elementor',
     },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(25_000),
+    signal: AbortSignal.timeout(30_000),
   })
 
   const data = await res.json()
@@ -545,7 +544,7 @@ export default {
 
       if (env.GEMINI_API_KEY) {
         try {
-          console.log('[Worker] /refine — tentando Gemini (timeout 12s)...')
+          console.log('[Worker] /refine — tentando Gemini 2.0 Flash (timeout 20s)...')
           refinedJson = await refineWithGemini(html, pageJson, env.GEMINI_API_KEY)
           console.log(`[Worker] /refine — Gemini OK: ${refinedJson.length} chars`)
         } catch (e) {

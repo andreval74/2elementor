@@ -39,7 +39,7 @@ export async function refinePageJson(rawHtml: string, currentPageJson: string): 
   const controller = new AbortController()
   let didTimeout   = false
   const startedAt  = Date.now()
-  const timeoutId  = setTimeout(() => { didTimeout = true; controller.abort() }, 60_000)
+  const timeoutId  = setTimeout(() => { didTimeout = true; controller.abort() }, 45_000)
 
   try {
     const res = await fetch(`${PROXY_URL}/refine`, {
@@ -80,7 +80,7 @@ export async function refinePageJson(rawHtml: string, currentPageJson: string): 
       || (err instanceof DOMException && err.name === 'AbortError')
 
     if (isAbort) {
-      const msg = 'Refinamento expirou (60s). Tente novamente — se persistir, exporte o JSON atual.'
+      const msg = 'Refinamento expirou (45s). Tente novamente — se persistir, exporte o JSON atual.'
       console.error('[Re-fazer] Timeout:', msg)
       throw new Error(msg)
     }

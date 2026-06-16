@@ -49,15 +49,20 @@ async function refineWithGemini(html, pageJson, apiKey) {
     generationConfig: {
       temperature: 0.1,
       topP: 0.9,
-      maxOutputTokens: 8192,
+      maxOutputTokens: 6000,
       responseMimeType: 'application/json',
-      thinkingConfig: { thinkingBudget: 0 }, // desativa thinking mode — resposta muito mais rápida
+      thinkingConfig: { thinkingBudget: 0 },
     },
   }
 
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(18_000),
+    },
   )
 
   const data = await res.json()
@@ -66,6 +71,37 @@ async function refineWithGemini(html, pageJson, apiKey) {
   const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
   if (!raw) throw new Error('Gemini retornou resposta vazia para refinamento')
   return stripJsonFences(raw)
+}
+
+async function refineWithGroq(html, pageJson, apiKey) {
+  const MAX = 10_000
+  const safeHtml = html.length     > MAX ? html.slice(0, MAX)     + '\n...[truncado]' : html
+  const safeJson = pageJson.length > MAX ? pageJson.slice(0, MAX) + '\n...[truncado]' : pageJson
+
+  const body = {
+    model: 'llama-3.3-70b-versatile',
+    messages: [
+      { role: 'system', content: REFINE_PROMPT },
+      { role: 'user',   content: `HTML:\n${safeHtml}\n\nCurrent Elementor JSON:\n${safeJson}` },
+    ],
+    max_tokens: 6000,
+    temperature: 0.1,
+    response_format: { type: 'json_object' },
+  }
+
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(20_000),
+  })
+
+  const data = await res.json()
+  if (!res.ok) throw new Error(`Groq refine ${res.status}: ${data?.error?.message || ''}`)
+
+  const text = data?.choices?.[0]?.message?.content ?? ''
+  if (!text) throw new Error('Groq retornou resposta vazia para refinamento')
+  return stripJsonFences(text)
 }
 
 // ─── Prompts (inglês = melhor performance em todos os modelos) ───────────────
@@ -465,21 +501,44 @@ export default {
       if (!html || !pageJson) {
         return jsonResponse({ error: { message: 'Campos obrigatórios: html, pageJson' } }, 400, origin)
       }
-      if (!env.GEMINI_API_KEY) {
-        return jsonResponse({ error: { message: 'GEMINI_API_KEY não configurado para refinamento' } }, 503, origin)
+      if (!env.GEMINI_API_KEY && !env.GROQ_API_KEY) {
+        return jsonResponse({ error: { message: 'Nenhuma chave configurada para refinamento (GEMINI_API_KEY ou GROQ_API_KEY)' } }, 503, origin)
       }
-      try {
-        console.log('[Worker] /refine — enviando para Gemini...')
-        const refinedJson = await refineWithGemini(html, pageJson, env.GEMINI_API_KEY)
-        console.log(`[Worker] /refine — resposta: ${refinedJson.length} chars`)
-        return new Response(JSON.stringify({ refinedJson }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
-        })
-      } catch (e) {
-        console.log(`[Worker] /refine falhou: ${e.message}`)
-        return jsonResponse({ error: { message: `Erro ao refinar: ${e.message}` } }, 503, origin)
+
+      let refinedJson = null
+      const refineErrors = []
+
+      if (env.GEMINI_API_KEY) {
+        try {
+          console.log('[Worker] /refine — tentando Gemini (timeout 18s)...')
+          refinedJson = await refineWithGemini(html, pageJson, env.GEMINI_API_KEY)
+          console.log(`[Worker] /refine — Gemini OK: ${refinedJson.length} chars`)
+        } catch (e) {
+          refineErrors.push(`Gemini: ${e.message}`)
+          console.log(`[Worker] /refine — Gemini falhou (${e.message}), tentando Groq...`)
+        }
       }
+
+      if (!refinedJson && env.GROQ_API_KEY) {
+        try {
+          console.log('[Worker] /refine — tentando Groq (timeout 20s)...')
+          refinedJson = await refineWithGroq(html, pageJson, env.GROQ_API_KEY)
+          console.log(`[Worker] /refine — Groq OK: ${refinedJson.length} chars`)
+        } catch (e) {
+          refineErrors.push(`Groq: ${e.message}`)
+          console.log(`[Worker] /refine — Groq falhou: ${e.message}`)
+        }
+      }
+
+      if (!refinedJson) {
+        const detail = refineErrors.join(' | ')
+        return jsonResponse({ error: { message: `Refinamento falhou: ${detail}` } }, 503, origin)
+      }
+
+      return new Response(JSON.stringify({ refinedJson }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
+      })
     }
 
     const { imageBase64, mimeType, dominantColors } = body

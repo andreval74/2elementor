@@ -119,12 +119,13 @@ export function useConversion(): UseConversionReturn {
     setErrorMessage(null)
     try {
       const refinedJson = await refinePageJson(rawHtml, currentPageJson)
-      // Preserva sections/exports acumulados — só substitui o pageJson refinado
       setResult(prev => prev ? { ...prev, pageJson: refinedJson } : null)
       setStatus('done')
     } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Erro ao refinar com IA'
+      console.error('[useConversion/refine]', err)
       setStatus('error')
-      setErrorMessage(err instanceof Error ? err.message : 'Erro ao refinar com IA')
+      setErrorMessage(msg)
     }
   }, [])
 

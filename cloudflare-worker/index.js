@@ -39,11 +39,20 @@ function stripJsonFences(text) {
 }
 
 async function refineWithGemini(html, pageJson, apiKey) {
-  const userText = `${REFINE_PROMPT}\n\nHTML:\n${html}\n\nCurrent Elementor JSON:\n${pageJson}`
+  const MAX = 12_000
+  const safeHtml = html.length     > MAX ? html.slice(0, MAX)     + '\n...[truncado]' : html
+  const safeJson = pageJson.length > MAX ? pageJson.slice(0, MAX) + '\n...[truncado]' : pageJson
+  const userText = `${REFINE_PROMPT}\n\nHTML:\n${safeHtml}\n\nCurrent Elementor JSON:\n${safeJson}`
 
   const body = {
     contents: [{ role: 'user', parts: [{ text: userText }] }],
-    generationConfig: { temperature: 0.1, topP: 0.9, maxOutputTokens: 32768 },
+    generationConfig: {
+      temperature: 0.1,
+      topP: 0.9,
+      maxOutputTokens: 8192,
+      responseMimeType: 'application/json',
+      thinkingConfig: { thinkingBudget: 0 }, // desativa thinking mode — resposta muito mais rápida
+    },
   }
 
   const res = await fetch(

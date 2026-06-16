@@ -12,6 +12,7 @@ interface OutputPanelProps {
   onDownloadAll: () => Promise<void>
   onRefine?: () => void
   isRefining?: boolean
+  refineCount?: number
   onDownloadDesignJson?: () => void
   onDownloadHtml?: () => void
   onDownloadCss?: () => void
@@ -19,7 +20,7 @@ interface OutputPanelProps {
 
 export function OutputPanel({
   exports, extractedImages, uiAnalysis,
-  onDownloadPage, onDownloadAll, onRefine, isRefining,
+  onDownloadPage, onDownloadAll, onRefine, isRefining, refineCount,
   onDownloadDesignJson, onDownloadHtml, onDownloadCss,
 }: OutputPanelProps) {
   const [showFormatInfo, setShowFormatInfo] = useState(false)
@@ -132,6 +133,9 @@ export function OutputPanel({
                   ? <RefreshCw size={13} className="animate-spin" />
                   : <Wand2 size={13} />}
                 {isRefining ? 'Refinando...' : 'Re-fazer'}
+                {!isRefining && (refineCount ?? 0) > 0 && (
+                  <span className="wk-badge-zip">×{refineCount}</span>
+                )}
               </button>
               <button
                 onClick={() => setShowFormatInfo(v => !v)}

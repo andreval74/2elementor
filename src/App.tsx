@@ -63,6 +63,7 @@ export default function App() {
   const [analyzedForHtml, setAnalyzedForHtml] = useState('')
   const [convertedForHtml, setConvertedForHtml] = useState('')
   const [uiAnalysis, setUiAnalysis] = useState<UIAnalysisResult | undefined>(undefined)
+  const [refineCount, setRefineCount] = useState(0)
   const pendingConvertHtml = useRef('')
   const lastConvertedHtmlRef = useRef('')
 
@@ -128,6 +129,7 @@ export default function App() {
 
   const handleRefine = useCallback(async () => {
     if (!html || !pageJson) return
+    setRefineCount(c => c + 1)
     await conversion.refine(html, pageJson)
   }, [html, pageJson, conversion])
 
@@ -350,6 +352,7 @@ export default function App() {
                 onDownloadAll={handleDownloadAll}
                 onRefine={pageJson ? handleRefine : undefined}
                 isRefining={isLoading}
+                refineCount={refineCount}
                 onDownloadDesignJson={handleDownloadDesignJson}
                 onDownloadHtml={handleDownloadAnalysisHtml}
                 onDownloadCss={handleDownloadAnalysisCss}

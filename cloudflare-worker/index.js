@@ -545,12 +545,12 @@ export default {
 
       if (env.GEMINI_API_KEY) {
         try {
-          console.log('[Worker] /refine — tentando Gemini (timeout 18s)...')
+          console.log('[Worker] /refine — tentando Gemini (timeout 12s)...')
           refinedJson = await refineWithGemini(html, pageJson, env.GEMINI_API_KEY)
           console.log(`[Worker] /refine — Gemini OK: ${refinedJson.length} chars`)
         } catch (e) {
           refineErrors.push(`Gemini: ${e.message}`)
-          console.log(`[Worker] /refine — Gemini falhou (${e.message}), tentando Groq...`)
+          console.log(`[Worker] /refine — Gemini falhou (${e.message}), tentando fallback...`)
         }
       }
 

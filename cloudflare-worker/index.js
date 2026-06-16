@@ -61,7 +61,7 @@ async function refineWithGemini(html, pageJson, apiKey) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(18_000),
+      signal: AbortSignal.timeout(12_000),
     },
   )
 
@@ -101,6 +101,41 @@ async function refineWithGroq(html, pageJson, apiKey) {
 
   const text = data?.choices?.[0]?.message?.content ?? ''
   if (!text) throw new Error('Groq retornou resposta vazia para refinamento')
+  return stripJsonFences(text)
+}
+
+async function refineWithOpenRouter(html, pageJson, apiKey) {
+  const MAX = 10_000
+  const safeHtml = html.length     > MAX ? html.slice(0, MAX)     + '\n...[truncado]' : html
+  const safeJson = pageJson.length > MAX ? pageJson.slice(0, MAX) + '\n...[truncado]' : pageJson
+
+  const body = {
+    model: 'google/gemma-4-31b-it:free',
+    messages: [
+      { role: 'system', content: REFINE_PROMPT },
+      { role: 'user',   content: `HTML:\n${safeHtml}\n\nCurrent Elementor JSON:\n${safeJson}` },
+    ],
+    max_tokens: 6000,
+    temperature: 0.1,
+  }
+
+  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+      'HTTP-Referer': 'https://2elementor.web3cafe.workers.dev',
+      'X-Title': 'WebKeeper 2Elementor',
+    },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(25_000),
+  })
+
+  const data = await res.json()
+  if (!res.ok) throw new Error(`OpenRouter refine ${res.status}: ${data?.error?.message || ''}`)
+
+  const text = data?.choices?.[0]?.message?.content ?? ''
+  if (!text) throw new Error('OpenRouter retornou resposta vazia para refinamento')
   return stripJsonFences(text)
 }
 
@@ -501,8 +536,8 @@ export default {
       if (!html || !pageJson) {
         return jsonResponse({ error: { message: 'Campos obrigatórios: html, pageJson' } }, 400, origin)
       }
-      if (!env.GEMINI_API_KEY && !env.GROQ_API_KEY) {
-        return jsonResponse({ error: { message: 'Nenhuma chave configurada para refinamento (GEMINI_API_KEY ou GROQ_API_KEY)' } }, 503, origin)
+      if (!env.GEMINI_API_KEY && !env.GROQ_API_KEY && !env.OPENROUTER_API_KEY) {
+        return jsonResponse({ error: { message: 'Nenhuma chave configurada para refinamento (GEMINI_API_KEY, GROQ_API_KEY ou OPENROUTER_API_KEY)' } }, 503, origin)
       }
 
       let refinedJson = null
@@ -527,6 +562,17 @@ export default {
         } catch (e) {
           refineErrors.push(`Groq: ${e.message}`)
           console.log(`[Worker] /refine — Groq falhou: ${e.message}`)
+        }
+      }
+
+      if (!refinedJson && env.OPENROUTER_API_KEY) {
+        try {
+          console.log('[Worker] /refine — tentando OpenRouter (timeout 25s)...')
+          refinedJson = await refineWithOpenRouter(html, pageJson, env.OPENROUTER_API_KEY)
+          console.log(`[Worker] /refine — OpenRouter OK: ${refinedJson.length} chars`)
+        } catch (e) {
+          refineErrors.push(`OpenRouter: ${e.message}`)
+          console.log(`[Worker] /refine — OpenRouter falhou: ${e.message}`)
         }
       }
 

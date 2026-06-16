@@ -36,3 +36,9 @@ jobs:
           exclude: |
             **/.git*/**
             **/node_modules/**
+
+      - name: Deploy Worker to Cloudflare
+        working-directory: cloudflare-worker
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

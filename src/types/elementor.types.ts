@@ -11,6 +11,7 @@ export type ElementorWidgetType =
   | 'image'
   | 'button'
   | 'icon-list'
+  | 'accordion'
   | 'divider'
   | 'video'
   | 'spacer'

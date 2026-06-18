@@ -1,18 +1,11 @@
 import type { UIAnalysisResult, VisionProvider } from '@/types/vision.types'
 import { VISION_SYSTEM_PROMPT, VISION_USER_PROMPT } from '@/utils/vision-prompt'
 import { parseOrRepairJson } from '@/utils/json-repair'
+import { fileToBase64DataUrl } from '@/utils/base64'
+import { enrichResultMeta } from '@/utils/provider-utils'
 
 const OR_MODEL = 'google/gemini-2.0-flash-exp:free'
 const OR_API_URL = 'https://openrouter.ai/api/v1/chat/completions'
-
-function fileToBase64DataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result as string)
-    reader.onerror = () => reject(new Error('Falha ao ler o arquivo'))
-    reader.readAsDataURL(file)
-  })
-}
 
 export const openrouterProvider: VisionProvider = {
   id: 'openrouter',
@@ -74,13 +67,6 @@ export const openrouterProvider: VisionProvider = {
     } catch (e) {
       throw new Error(`OpenRouter: ${e instanceof Error ? e.message : 'JSON inválido'}`)
     }
-    result.meta = {
-      ...result.meta,
-      analyzedAt: new Date().toISOString(),
-      model: OR_MODEL,
-      provider: 'openrouter',
-      imageFile: file.name,
-    }
-    return result
+    return enrichResultMeta(result, OR_MODEL, 'openrouter', file)
   },
 }

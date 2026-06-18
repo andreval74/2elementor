@@ -31,6 +31,7 @@ export interface Section {
   id: string
   name: SectionName
   label: string
+  contentTitle?: string  // título extraído do conteúdo da seção (H1 → H2 → heading → botão)
   confidence: number
   nodes: LayoutNode[]
   outputFile: string

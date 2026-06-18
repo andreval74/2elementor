@@ -38,11 +38,22 @@ function stripJsonFences(text) {
     .trim()
 }
 
-async function refineWithGemini(html, pageJson, apiKey) {
+/** Constrói o conteúdo do usuário para refinamento, opcionalmente com violations. */
+function buildRefineUserContent(html, pageJson, violations) {
   const MAX = 8_000
   const safeHtml = html.length     > MAX ? html.slice(0, MAX)     + '\n...[truncado]' : html
   const safeJson = pageJson.length > MAX ? pageJson.slice(0, MAX) + '\n...[truncado]' : pageJson
-  const userText = `${REFINE_PROMPT}\n\nHTML:\n${safeHtml}\n\nCurrent Elementor JSON:\n${safeJson}`
+
+  let content = `HTML:\n${safeHtml}\n\nCurrent Elementor JSON:\n${safeJson}`
+  if (violations) {
+    content += `\n\nCRITICAL structural problems detected — you MUST fix ALL of them:\n${violations}\n\nVerify: each item listed above must be present and correct in the output JSON.`
+  }
+  return content
+}
+
+async function refineWithGemini(html, pageJson, apiKey, violations) {
+  const userContent = buildRefineUserContent(html, pageJson, violations)
+  const userText = `${REFINE_PROMPT}\n\n${userContent}`
 
   const body = {
     contents: [{ role: 'user', parts: [{ text: userText }] }],
@@ -73,16 +84,14 @@ async function refineWithGemini(html, pageJson, apiKey) {
   return stripJsonFences(raw)
 }
 
-async function refineWithGroq(html, pageJson, apiKey) {
-  const MAX = 8_000
-  const safeHtml = html.length     > MAX ? html.slice(0, MAX)     + '\n...[truncado]' : html
-  const safeJson = pageJson.length > MAX ? pageJson.slice(0, MAX) + '\n...[truncado]' : pageJson
+async function refineWithGroq(html, pageJson, apiKey, violations) {
+  const userContent = buildRefineUserContent(html, pageJson, violations)
 
   const body = {
     model: 'llama-3.3-70b-versatile',
     messages: [
       { role: 'system', content: REFINE_PROMPT },
-      { role: 'user',   content: `HTML:\n${safeHtml}\n\nCurrent Elementor JSON:\n${safeJson}` },
+      { role: 'user',   content: userContent },
     ],
     max_tokens: 6000,
     temperature: 0.1,
@@ -104,16 +113,14 @@ async function refineWithGroq(html, pageJson, apiKey) {
   return stripJsonFences(text)
 }
 
-async function refineWithOpenRouter(html, pageJson, apiKey) {
-  const MAX = 8_000
-  const safeHtml = html.length     > MAX ? html.slice(0, MAX)     + '\n...[truncado]' : html
-  const safeJson = pageJson.length > MAX ? pageJson.slice(0, MAX) + '\n...[truncado]' : pageJson
+async function refineWithOpenRouter(html, pageJson, apiKey, violations) {
+  const userContent = buildRefineUserContent(html, pageJson, violations)
 
   const body = {
     model: 'google/gemma-4-31b-it:free',
     messages: [
       { role: 'system', content: REFINE_PROMPT },
-      { role: 'user',   content: `HTML:\n${safeHtml}\n\nCurrent Elementor JSON:\n${safeJson}` },
+      { role: 'user',   content: userContent },
     ],
     max_tokens: 6000,
     temperature: 0.1,
@@ -530,14 +537,43 @@ export default {
 
     const url = new URL(request.url)
 
+    // ─── Rota /image-proxy — fetch seguro de imagens externas (CORS bypass) ───
+    if (url.pathname === '/image-proxy') {
+      const { imageUrl } = body
+      if (!imageUrl) return jsonResponse({ error: 'imageUrl required' }, 400, origin)
+      try {
+        const resp = await fetch(imageUrl, {
+          headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': '' },
+          signal: AbortSignal.timeout(10_000),
+        })
+        if (!resp.ok) return jsonResponse({ error: `upstream ${resp.status}` }, 502, origin)
+        const buffer = await resp.arrayBuffer()
+        const bytes  = new Uint8Array(buffer)
+        let binary = ''
+        // Chunk para não ultrapassar limite do stack em btoa
+        for (let i = 0; i < bytes.length; i += 8192) {
+          binary += String.fromCharCode(...bytes.subarray(i, i + 8192))
+        }
+        const base64   = btoa(binary)
+        const mimeType = resp.headers.get('content-type') || 'image/jpeg'
+        return jsonResponse({ dataUrl: `data:${mimeType};base64,${base64}` }, 200, origin)
+      } catch (e) {
+        return jsonResponse({ error: e.message }, 502, origin)
+      }
+    }
+
     // ─── Rota /refine — refinamento de JSON Elementor via texto (sem imagem) ──
     if (url.pathname === '/refine') {
-      const { html, pageJson } = body
+      const { html, pageJson, violations } = body
       if (!html || !pageJson) {
         return jsonResponse({ error: { message: 'Campos obrigatórios: html, pageJson' } }, 400, origin)
       }
       if (!env.GEMINI_API_KEY && !env.GROQ_API_KEY && !env.OPENROUTER_API_KEY) {
         return jsonResponse({ error: { message: 'Nenhuma chave configurada para refinamento (GEMINI_API_KEY, GROQ_API_KEY ou OPENROUTER_API_KEY)' } }, 503, origin)
+      }
+
+      if (violations) {
+        console.log(`[Worker] /refine — violations recebidas: ${violations.split('\n').length} problema(s)`)
       }
 
       let refinedJson = null
@@ -546,7 +582,7 @@ export default {
       if (env.GEMINI_API_KEY) {
         try {
           console.log('[Worker] /refine — tentando Gemini 2.5 Flash (timeout 20s)...')
-          refinedJson = await refineWithGemini(html, pageJson, env.GEMINI_API_KEY)
+          refinedJson = await refineWithGemini(html, pageJson, env.GEMINI_API_KEY, violations)
           console.log(`[Worker] /refine — Gemini OK: ${refinedJson.length} chars`)
         } catch (e) {
           refineErrors.push(`Gemini: ${e.message}`)
@@ -557,7 +593,7 @@ export default {
       if (!refinedJson && env.GROQ_API_KEY) {
         try {
           console.log('[Worker] /refine — tentando Groq (timeout 20s)...')
-          refinedJson = await refineWithGroq(html, pageJson, env.GROQ_API_KEY)
+          refinedJson = await refineWithGroq(html, pageJson, env.GROQ_API_KEY, violations)
           console.log(`[Worker] /refine — Groq OK: ${refinedJson.length} chars`)
         } catch (e) {
           refineErrors.push(`Groq: ${e.message}`)
@@ -568,7 +604,7 @@ export default {
       if (!refinedJson && env.OPENROUTER_API_KEY) {
         try {
           console.log('[Worker] /refine — tentando OpenRouter (timeout 25s)...')
-          refinedJson = await refineWithOpenRouter(html, pageJson, env.OPENROUTER_API_KEY)
+          refinedJson = await refineWithOpenRouter(html, pageJson, env.OPENROUTER_API_KEY, violations)
           console.log(`[Worker] /refine — OpenRouter OK: ${refinedJson.length} chars`)
         } catch (e) {
           refineErrors.push(`OpenRouter: ${e.message}`)

@@ -19,12 +19,33 @@ Ferramenta web que detecta automaticamente seções de um layout HTML (header, h
 
 - Importar HTML (texto, arquivo ou drag-drop)
 - Importar ZIP (com múltiplos HTMLs e imagens)
-- Detectar seções automaticamente
+- Importar imagem / screenshot via Vision AI (Gemini → OpenRouter → Groq → Grok)
+- Detectar seções automaticamente (header, hero, services, cases, faq, cta, footer)
+- **Nomes inteligentes de seção** — extraídos do conteúdo real (H1 → H2 → heading → botão), nunca nomes técnicos como "Header #3"
 - Configurar tokens dinâmicos (WhatsApp, e-mail, redes sociais)
 - Exportar página completa (`page.json`)
 - Exportar seções individuais (`header.json`, `hero.json`, `faq.json`...)
 - Preview visual do HTML original
-- Validação do JSON antes de exportar
+- **Miniaturas inline** — cada seção exibe um preview visual (iframe lazy-loaded, escala uniforme 0.125×) direto na lista de exportação
+- **Mapa da Página** — painel com renderização única da página completa, seções numeradas, hover e clique sincronizados com a lista
+- **REFINE MODE** — refinar o JSON atual com IA (Cloudflare Worker `/refine`)
+- **EDIT MODE** — evoluir páginas existentes (snapshot → diff → patch cirúrgico, preservação máxima de widgets e configurações)
+- Validação estrutural básica em todos os modos (`validator.ts`)
+- Validação de integridade estrutural profunda — 8 tipos de violação com auto-correção
+- Validação visual automatizada — scores de cores, tipografia, layout e media
+- Quality Gate com score multi-dimensional (structural 50% + visual 30% + confidence 20%)
+
+---
+
+## Evoluindo páginas existentes
+
+Além de criar páginas do zero, o WebKeeper 2Elementor suporta a **evolução de páginas que já existem no Elementor**.
+
+Ao fornecer o JSON original da página junto com o HTML atualizado, a ferramenta opera em **EDIT MODE**: identifica apenas o que mudou, aplica as alterações cirurgicamente e preserva todos os widgets, containers, sections e configurações existentes — sem reconstruir o que já funciona.
+
+> Menos é mais. Alterar menos garante mais estabilidade.
+
+Consulte `prompts/PAGE_EVOLUTION.md` para as regras de preservação, o pipeline de evolução e o checklist obrigatório antes de qualquer geração em EDIT MODE.
 
 ---
 

@@ -2,20 +2,13 @@ import type { UIAnalysisResult, VisionProvider } from '@/types/vision.types'
 import { parseOrRepairJson } from '@/utils/json-repair'
 import { extractDominantColors } from '@/utils/color-extractor'
 import { compressImage } from '@/utils/image-compressor'
+import { fileToBase64 } from '@/utils/base64'
+import { enrichResultMeta } from '@/utils/provider-utils'
 
 // URL do Worker definida em .env / variável de build
 // Se não estiver definida, o provider não aparece na lista
 export const PROXY_URL: string = import.meta.env.VITE_PROXY_URL ?? ''
 export const isProxyAvailable: boolean = !!PROXY_URL
-
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve((reader.result as string).split(',')[1])
-    reader.onerror = () => reject(new Error('Falha ao ler o arquivo'))
-    reader.readAsDataURL(file)
-  })
-}
 
 export const proxyProvider: VisionProvider = {
   id: 'proxy',
@@ -87,13 +80,6 @@ export const proxyProvider: VisionProvider = {
       throw new Error(`Análise: ${e instanceof Error ? e.message : 'JSON inválido'}`)
     }
 
-    result.meta = {
-      ...result.meta,
-      analyzedAt: new Date().toISOString(),
-      model: 'gemini-2.5-flash',
-      provider: 'proxy',
-      imageFile: file.name,
-    }
-    return result
+    return enrichResultMeta(result, 'gemini-2.5-flash', 'proxy', file)
   },
 }

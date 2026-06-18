@@ -4,6 +4,8 @@
 import { ELEMENTOR_VERSION } from '@/utils/constants'
 import type { ElementorElement, ElementorTemplate, ElementorType } from '@/types/elementor.types'
 import type { ValidationResult } from '@/types/app.types'
+import type { PageSnapshot } from '@/types/snapshot.types'
+import { createSnapshotFromElementor } from '@/services/page-snapshot'
 
 const VALID_TYPES: ElementorType[] = ['page', 'header', 'footer', 'popup', 'post', 'error-404']
 const VALID_EL_TYPES = ['container', 'section', 'column', 'widget']
@@ -44,5 +46,41 @@ export function validateTemplate(template: ElementorTemplate): ValidationResult 
     if (template.content.length === 0) warnings.push('Nenhuma seção gerada — o HTML pode estar vazio')
   }
 
+  return { valid: errors.length === 0, errors, warnings }
+}
+
+/**
+ * Valida que a evolução não removeu seções ou widgets sem operação declarada (anti-regressão).
+ * Cria um snapshot do template evoluído e compara contagens e IDs com o snapshot original.
+ * @param original - Snapshot da página ANTES da evolução (estado de referência)
+ * @param evolved  - Template APÓS aplicação do diff
+ * @returns ValidationResult — erros para regressões estruturais, warnings para regressões de widgets
+ */
+export function validateNoRegression(
+  original: PageSnapshot,
+  evolved: ElementorTemplate,
+): ValidationResult {
+  const errors: string[] = []
+  const warnings: string[] = []
+  const evolvedSnapshot = createSnapshotFromElementor(evolved)
+
+  if (evolvedSnapshot.sectionCount < original.sectionCount) {
+    errors.push(
+      `Regressão estrutural: ${original.sectionCount} seções originais → ${evolvedSnapshot.sectionCount} no resultado evoluído`,
+    )
+  }
+  if (evolvedSnapshot.totalWidgetCount < original.totalWidgetCount) {
+    warnings.push(
+      `Widgets reduzidos: ${original.totalWidgetCount} → ${evolvedSnapshot.totalWidgetCount} (verifique se as remoções eram intencionais)`,
+    )
+  }
+  const evolvedIds = new Set(evolvedSnapshot.sections.map(s => s.id))
+  for (const origSection of original.sections) {
+    if (!evolvedIds.has(origSection.id)) {
+      errors.push(
+        `Seção removida sem operação de remoção declarada: id=${origSection.id} (tipo: ${origSection.sectionType})`,
+      )
+    }
+  }
   return { valid: errors.length === 0, errors, warnings }
 }

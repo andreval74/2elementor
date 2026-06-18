@@ -9,7 +9,18 @@ export type { UIAnalysisResult }
 
 export type InputType = 'html' | 'zip' | 'image'
 
-export type ConversionStatus = 'idle' | 'parsing' | 'mapping' | 'done' | 'error'
+export type ConversionStatus =
+  | 'idle'
+  | 'parsing'
+  | 'mapping'
+  | 'refining'       // chamada ao Worker /refine (aguardando IA)
+  | 'snapshotting'   // createSnapshotFromElementor + createSnapshotFromElements
+  | 'diffing'        // computeDiff entre snapshots
+  | 'patching'       // applyDiff sobre o template original
+  | 'validating'     // validateStructuralIntegrity
+  | 'correcting'     // applyStructuralCorrections (por tentativa)
+  | 'done'
+  | 'error'
 
 export interface TokenMap {
   WHATSAPP_NUMBER: string
@@ -43,17 +54,6 @@ export interface ConversionHistory {
   sectionsCount: number
   rawHtml: string
   exports: SectionExport[]
-}
-
-export interface AppState {
-  inputType: InputType
-  rawHtml: string
-  sections: Section[]
-  tokens: TokenMap
-  exports: SectionExport[]
-  history: ConversionHistory[]
-  status: ConversionStatus
-  errorMessage: string | null
 }
 
 export const DEFAULT_TOKENS: TokenMap = {

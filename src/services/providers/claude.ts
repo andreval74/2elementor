@@ -1,18 +1,11 @@
 import type { UIAnalysisResult, VisionProvider } from '@/types/vision.types'
 import { VISION_SYSTEM_PROMPT, VISION_USER_PROMPT } from '@/utils/vision-prompt'
 import { parseOrRepairJson } from '@/utils/json-repair'
+import { fileToBase64 } from '@/utils/base64'
+import { enrichResultMeta } from '@/utils/provider-utils'
 
 const CLAUDE_MODEL = 'claude-opus-4-8'
 const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages'
-
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve((reader.result as string).split(',')[1])
-    reader.onerror = () => reject(new Error('Falha ao ler o arquivo'))
-    reader.readAsDataURL(file)
-  })
-}
 
 function sanitizeMediaType(type: string): 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' {
   const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'] as const
@@ -82,13 +75,6 @@ export const claudeProvider: VisionProvider = {
     } catch (e) {
       throw new Error(`Claude: ${e instanceof Error ? e.message : 'JSON inválido'}`)
     }
-    result.meta = {
-      ...result.meta,
-      analyzedAt: new Date().toISOString(),
-      model: data.model ?? CLAUDE_MODEL,
-      provider: 'claude',
-      imageFile: file.name,
-    }
-    return result
+    return enrichResultMeta(result, data.model ?? CLAUDE_MODEL, 'claude', file)
   },
 }

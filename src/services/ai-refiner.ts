@@ -1,12 +1,15 @@
 const PROXY_URL = import.meta.env.VITE_PROXY_URL ?? ''
 const MAX_CHARS = 10_000
 
+const truncate = (s: string): string =>
+  s.length > MAX_CHARS ? s.slice(0, MAX_CHARS) + '\n...[truncado]' : s
+
 function prepareHtmlForRefine(rawHtml: string): string {
   const cleanedHtml = rawHtml
     .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
     .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
 
-  return cleanedHtml.length > MAX_CHARS ? cleanedHtml.slice(0, MAX_CHARS) + '\n...[truncado]' : cleanedHtml
+  return truncate(cleanedHtml)
 }
 
 function preparePageJsonForRefine(currentPageJson: string): string {
@@ -17,14 +20,17 @@ function preparePageJsonForRefine(currentPageJson: string): string {
       parsed.page_settings.custom_css = '[omitido no refine]'
     }
 
-    const compactJson = JSON.stringify(parsed)
-    return compactJson.length > MAX_CHARS ? compactJson.slice(0, MAX_CHARS) + '\n...[truncado]' : compactJson
+    return truncate(JSON.stringify(parsed))
   } catch {
-    return currentPageJson.length > MAX_CHARS ? currentPageJson.slice(0, MAX_CHARS) + '\n...[truncado]' : currentPageJson
+    return truncate(currentPageJson)
   }
 }
 
-export async function refinePageJson(rawHtml: string, currentPageJson: string): Promise<string> {
+export async function refinePageJson(
+  rawHtml: string,
+  currentPageJson: string,
+  violations?: string[],
+): Promise<string> {
   if (!PROXY_URL) {
     const msg = 'VITE_PROXY_URL não configurado'
     console.error('[Re-fazer]', msg)
@@ -34,7 +40,11 @@ export async function refinePageJson(rawHtml: string, currentPageJson: string): 
   const html = prepareHtmlForRefine(rawHtml)
   const pageJson = preparePageJsonForRefine(currentPageJson)
 
-  console.log(`[Re-fazer] Enviando para Worker: html=${html.length}chars, json=${pageJson.length}chars`)
+  const hasViolations = violations && violations.length > 0
+  console.log(
+    `[Re-fazer] Enviando para Worker: html=${html.length}chars, json=${pageJson.length}chars` +
+    (hasViolations ? `, violations=${violations.length}` : ''),
+  )
 
   const controller = new AbortController()
   let didTimeout   = false
@@ -45,7 +55,11 @@ export async function refinePageJson(rawHtml: string, currentPageJson: string): 
     const res = await fetch(`${PROXY_URL}/refine`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ html, pageJson }),
+      body: JSON.stringify({
+        html,
+        pageJson,
+        ...(hasViolations ? { violations: violations.join('\n') } : {}),
+      }),
       signal: controller.signal,
     })
 

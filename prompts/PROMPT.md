@@ -1,6 +1,6 @@
 # PROMPT.md — WebKeeper 2Elementor
 # Principal Software Architect | AI Systems Engineer | Elementor Reverse Engineering Specialist
-# Consultar sempre junto com: ARCHITECTURE.md · DEVELOPMENT_RULES.md · VISION.md
+# Consultar sempre junto com: ARCHITECTURE.md · DEVELOPMENT_RULES.md · VISION.md · PAGE_EVOLUTION.md
 
 ---
 
@@ -97,6 +97,33 @@ A exportação **nunca** ocorre antes da validação completa.
 
 ---
 
+## MODO DE GERAÇÃO — CREATE MODE vs. EDIT MODE
+
+Antes de iniciar qualquer pipeline, determinar o modo correto:
+
+| Modo | Condição de ativação | Documento de referência |
+|---|---|---|
+| **CREATE MODE** | A página não existe no Elementor — nenhum JSON prévio disponível | Este arquivo (PROMPT.md) |
+| **EDIT MODE** | A página já existe no Elementor — JSON original disponível | PAGE_EVOLUTION.md |
+
+### Determinação do modo
+
+```
+Há um JSON original da página?
+  ├── NÃO → CREATE MODE — seguir pipeline abaixo
+  └── SIM → EDIT MODE — consultar PAGE_EVOLUTION.md ANTES de qualquer ação
+```
+
+**Em EDIT MODE:**
+- O pipeline de criação descrito neste arquivo **não se aplica diretamente**
+- A filosofia de preservação máxima substitui a geração completa
+- Nenhum widget, container ou section existente é recriado sem instrução explícita
+- Consultar PAGE_EVOLUTION.md para o pipeline completo, checklist e regras de proteção
+
+> Ignorar o modo de geração correto é a causa raiz mais comum de perda irreversível de configurações Elementor.
+
+---
+
 ## PIPELINE INTELIGENTE (iterativo)
 
 O pipeline é iterativo — nunca executa apenas uma conversão:
@@ -159,6 +186,8 @@ src/
     ConfigDashboard/
     JsonViewer/
     SectionCard/
+    PageMap/
+    SectionPreview/
   services/           ← lógica pura (sem React)
     html-parser.ts         ← HTML → LayoutNode[]
     section-detector.ts    ← detecta seções semanticamente
@@ -166,11 +195,19 @@ src/
     elementor-exporter.ts  ← monta JSON final (version 0.4)
     zip-handler.ts         ← JSZip wrapper (UTF-8 via uint8array)
     token-resolver.ts      ← substitui tokens {{}} no HTML
-    validator.ts           ← valida JSON antes de exportar
+    validator.ts           ← validateTemplate + validateNoRegression
+    page-snapshot.ts       ← snapshot estrutural (CREATE/EDIT/VISION)
+    snapshot-diff.ts       ← diff mínimo entre dois snapshots
+    snapshot-patcher.ts    ← aplica diff cirurgicamente (spread-based)
+    structural-validator.ts← validação profunda pós-geração
+    structural-corrector.ts← auto-correção de violações estruturais
+    visual-validator.ts    ← validação visual: cores, tipografia, layout, media
+    quality-gate.ts        ← gate central de qualidade com scores e thresholds
+    ai-refiner.ts          ← chama Worker /refine para refinamento por IA
     vision-registry.ts     ← orquestra providers de IA Vision
     providers/             ← gemini.ts, openrouter.ts, groq.ts, claude.ts
   hooks/              ← React hooks
-    useConversion.ts
+    useConversion.ts       ← orquestra os 4 modos: create/vision/refine/edit
     useHistory.ts
     useTokens.ts
   utils/              ← funções puras
@@ -182,7 +219,9 @@ src/
   types/              ← interfaces TypeScript
     elementor.types.ts
     layout.types.ts
-    app.types.ts
+    app.types.ts           ← ConversionStatus, TokenMap, SectionExport
+    snapshot.types.ts      ← PageSnapshot, PageDiff, DiffOperation
+    validation.types.ts    ← StructuralReport, VisualValidationResult, QualityGateResult
     vision.types.ts
 cloudflare-worker/    ← Worker com cascata de 4 providers de IA
 prompts/              ← arquivos de prompt editáveis (este arquivo + HTML-GENERATION.md)
@@ -357,9 +396,31 @@ Substituição em tempo real antes de gerar o JSON final.
 
 ---
 
-## DETECÇÃO AUTOMÁTICA DE SEÇÕES
+## DETECÇÃO AUTOMÁTICA DE SEÇÕES E NOMEAÇÃO INTELIGENTE
 
-`src/services/section-detector.ts` — detecção semântica por sinais HTML:
+`src/services/section-detector.ts` — detecção semântica por sinais HTML.
+
+### Regra de nomeação — NUNCA usar nomes técnicos
+
+O label de cada seção **deve refletir o conteúdo da página**, não o tipo técnico.
+
+**Proibido:** "Header #3", "Services #2", "Container #5", "Widget #12"
+
+**Correto:** "Hero — Transforme seu Negócio", "Serviços — Desenvolvimento Web", "FAQ — Perguntas Frequentes"
+
+**Prioridade de extração (função `extractContentTitle`):**
+1. Texto do `<h1>` da seção
+2. Texto do `<h2>`
+3. Primeiro heading `<h3>`–`<h6>`
+4. Texto de botão/link curto (≤ 30 chars)
+5. Primeiro parágrafo relevante (> 5 chars)
+6. `null` → usar label de tipo completo (ex: "Rodapé")
+
+**Formato do label:** `{ShortPrefix} — {ContentTitle}` (prefixos em `SECTION_SHORT_LABELS` em constants.ts)
+
+O `outputFile` segue o padrão técnico por tipo (`hero.json`, `header-2.json`) — apenas o label é orientado ao conteúdo.
+
+`src/services/section-detector.ts` — sinais de detecção por tipo:
 
 | Seção | Sinal de detecção |
 |---|---|
@@ -478,6 +539,7 @@ Quando a conversão apresentar falhas significativas,
 - ❌ Criar condicionais específicas para um HTML isolado
 - ❌ Duplicar funções ou lógicas existentes
 - ❌ Modificar arquivos `.md` sem solicitação explícita
+- ❌ Gerar JSON completo do zero quando um JSON original foi fornecido (EDIT MODE obrigatório)
 
 ---
 
@@ -556,7 +618,6 @@ Comentar no código para orientar implementações futuras:
 // [FUTURE: ai-generate]  — geração por linguagem natural (Fase 3)
 // [FUTURE: marketplace]  — templates vendáveis (Fase 5)
 // [FUTURE: url-input]    — crawler de URL (próxima iteração)
-// [FUTURE: score-engine] — score de similaridade visual (próxima iteração)
 ```
 
 ---

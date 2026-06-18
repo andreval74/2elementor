@@ -168,6 +168,21 @@ function extractBgImage(node: LayoutNode): { url: string } | undefined {
   return m ? { url: m[1] } : undefined
 }
 
+// Detecta padrão de imagem usada como overlay de fundo via position:absolute
+// Ex: <div class="absolute inset-0"><img src="..." /></div>
+function extractAbsoluteBgImg(node: LayoutNode): { url: string } | undefined {
+  for (const child of node.children) {
+    const cc = nodeClass(child)
+    if (cc.includes('absolute') && cc.includes('inset-0')) {
+      const img = child.tag === 'img'
+        ? child
+        : child.children.find(n => n.tag === 'img')
+      if (img?.attributes.src) return { url: img.attributes.src }
+    }
+  }
+  return undefined
+}
+
 function extractFontSize(node: LayoutNode): ElementorTypographySize | undefined {
   const fs = node.styles?.['font-size']
   if (fs) {
@@ -453,6 +468,31 @@ function buildHtmlWidget(html: string): ElementorElement {
   }
 }
 
+// FAQ accordion — mapeia <details>/<summary> para o widget nativo do Elementor
+function buildAccordionWidget(node: LayoutNode): ElementorElement {
+  const detailNodes = node.tag === 'details'
+    ? [node]
+    : node.children.filter(c => c.tag === 'details')
+
+  const tabs = detailNodes.map(d => {
+    const summary = d.children.find(c => c.tag === 'summary')
+    const body = d.children
+      .filter(c => c.tag !== 'summary')
+      .map(c => c.rawHtml ?? '')
+      .join('')
+    const title = (summary?.textContent ?? '')
+      .replace(/[▼▲▾▴⌄⌃]+/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+    return { _id: freshId(), tab_title: title, tab_content: body }
+  })
+
+  return {
+    id: freshId(), elType: 'widget', widgetType: 'accordion', isInner: false,
+    settings: { tabs }, elements: [],
+  }
+}
+
 // Widget de setup Tailwind — sempre injetado como primeiro elemento da página/seção
 function buildTailwindSetup(fontLinks = ''): ElementorElement {
   const extra = fontLinks ? `\n${fontLinks}` : ''
@@ -473,13 +513,14 @@ function buildContainerEl(
 }
 
 // Tags que nunca devem ser convertidas para widgets nativos — sempre html widget
+// Nota: 'details' e 'summary' são tratados por buildAccordionWidget (não entram aqui)
 const ALWAYS_HTML_TAGS = new Set([
-  'svg', 'canvas', 'table', 'form', 'details', 'summary',
+  'svg', 'canvas', 'table', 'form',
   'select', 'fieldset', 'object', 'embed', 'noscript',
 ])
 
 function isAlwaysHtml(node: LayoutNode): boolean {
-  return ALWAYS_HTML_TAGS.has(node.tag) || node.type === 'accordion' || node.type === 'unknown'
+  return ALWAYS_HTML_TAGS.has(node.tag) || node.type === 'unknown'
 }
 
 // Detecta layout flex/grid (linha com múltiplas colunas)
@@ -492,6 +533,10 @@ function isFlexRow(node: LayoutNode): boolean {
 
 function processNode(node: LayoutNode, depth: number): ElementorElement | null {
   if (node.type === 'spacer') return null
+  // FAQ accordion: nó de detalhes individual ou container com filhos <details>
+  if (node.type === 'accordion' || node.tag === 'details') return buildAccordionWidget(node)
+  if (node.type === 'container' && node.children.some(c => c.tag === 'details' || c.type === 'accordion'))
+    return buildAccordionWidget(node)
   if (isAlwaysHtml(node)) return buildHtmlWidget(node.rawHtml ?? '')
   if (node.type === 'heading') return buildHeadingWidget(node)
   if (node.type === 'divider') return buildDividerWidget()
@@ -585,7 +630,13 @@ function mapSectionNodeToContainer(section: Section, fontLinks = '', isFirst = f
   }
 
   const bgColor = extractBgColor(topNode) ?? '#000000'
-  const sourceNodes = topNode.children.length > 0 ? topNode.children : [topNode]
+  const absoluteBgImg = extractAbsoluteBgImg(topNode)
+  // Exclui o overlay absoluto dos filhos processados quando vira background
+  const sourceNodes = topNode.children.length > 0
+    ? (absoluteBgImg
+        ? topNode.children.filter(c => !(nodeClass(c).includes('absolute') && nodeClass(c).includes('inset-0')))
+        : topNode.children)
+    : [topNode]
   const widgets = processChildren(sourceNodes, 1)
 
   const sectionSettings: ElementorSettings = {
@@ -599,8 +650,9 @@ function mapSectionNodeToContainer(section: Section, fontLinks = '', isFirst = f
   const cssClasses = nodeClass(topNode).trim()
   if (cssClasses) sectionSettings._css_classes = cssClasses
 
-  const bgImage = extractBgImage(topNode)
+  const bgImage = extractBgImage(topNode) ?? absoluteBgImg
   if (bgImage) {
+    sectionSettings.background_background = 'classic'
     sectionSettings.background_image = { url: bgImage.url, id: 0 }
     sectionSettings.background_size = 'cover'
     sectionSettings.background_position = 'center center'

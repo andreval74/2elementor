@@ -1,18 +1,11 @@
 import type { UIAnalysisResult, VisionProvider } from '@/types/vision.types'
 import { VISION_SYSTEM_PROMPT, VISION_USER_PROMPT } from '@/utils/vision-prompt'
 import { parseOrRepairJson } from '@/utils/json-repair'
+import { fileToBase64DataUrl } from '@/utils/base64'
+import { enrichResultMeta } from '@/utils/provider-utils'
 
 const TOGETHER_MODEL = 'meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo'
 const TOGETHER_API_URL = 'https://api.together.xyz/v1/chat/completions'
-
-function fileToBase64DataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result as string)
-    reader.onerror = () => reject(new Error('Falha ao ler o arquivo'))
-    reader.readAsDataURL(file)
-  })
-}
 
 export const togetherProvider: VisionProvider = {
   id: 'together',
@@ -71,13 +64,6 @@ export const togetherProvider: VisionProvider = {
     } catch (e) {
       throw new Error(`Together AI: ${e instanceof Error ? e.message : 'JSON inválido'}`)
     }
-    result.meta = {
-      ...result.meta,
-      analyzedAt: new Date().toISOString(),
-      model: TOGETHER_MODEL,
-      provider: 'together',
-      imageFile: file.name,
-    }
-    return result
+    return enrichResultMeta(result, TOGETHER_MODEL, 'together', file)
   },
 }

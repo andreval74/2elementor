@@ -356,6 +356,10 @@ export default function App() {
                 onDownloadDesignJson={handleDownloadDesignJson}
                 onDownloadHtml={handleDownloadAnalysisHtml}
                 onDownloadCss={handleDownloadAnalysisCss}
+                onRefineSection={exports.length > 0 ? conversion.refineSection : undefined}
+                sectionRefining={conversion.sectionRefining}
+                embeddingStatus={conversion.embeddingStatus}
+                failedImages={conversion.result?.failedImages}
               />
             </div>
             <div className="mt-4 pt-4 border-t border-border-subtle flex gap-2">

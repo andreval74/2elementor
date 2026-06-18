@@ -18,6 +18,19 @@ export const SECTION_LABELS: Record<string, string> = {
   footer: 'Rodapé',
 }
 
+// Prefixos curtos usados quando o label é composto: "{prefix} — {contentTitle}"
+// [REUSE]: importado em section-detector.ts
+export const SECTION_SHORT_LABELS: Record<string, string> = {
+  header: 'Cabeçalho',
+  hero: 'Hero',
+  about: 'Sobre',
+  services: 'Serviços',
+  cases: 'Cases',
+  faq: 'FAQ',
+  cta: 'CTA',
+  footer: 'Rodapé',
+}
+
 export const SECTION_OUTPUT_FILES: Record<string, string> = {
   header: 'header.json',
   hero: 'hero.json',

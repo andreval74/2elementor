@@ -1,6 +1,8 @@
 // ─── LAYOUT TYPES ────────────────────────────────────────────────────────────
 // Tipos da árvore intermediária de layout (resultado do parse do HTML)
 
+import type { ExtractedCSS } from '@/services/css-extractor'
+
 export type NodeType =
   | 'container'
   | 'heading'
@@ -25,6 +27,7 @@ export interface LayoutNode {
   textContent?: string
   styles?: Record<string, string>
   rawHtml?: string  // outerHTML original preservado para evitar perda de texto misto
+  extractedCSS?: ExtractedCSS  // CSS extraído estruturado
 }
 
 export interface Section {

@@ -1,6 +1,6 @@
 # governance/CURRENT_STATE.md — Estado Atual do Projeto
 > Reflete o que está implementado e funcionando em produção
-> **Última atualização:** 2026-06-17 | Versão: 1.5.0
+> **Última atualização:** 2026-06-19 | Versão: 1.7.0
 
 ---
 
@@ -14,6 +14,12 @@
 - ✅ Deduplicação automática de seções duplicadas (#2, #3, `header-2.json`)
 - ✅ 9 tokens dinâmicos configuráveis (WhatsApp, email, redes sociais, empresa, telefone)
 - ✅ Export: page.json + seções individuais + ZIP completo com assets
+- ✅ Estratégia Híbrida Inteligente: widgets nativos para layouts simples, widget HTML para estilos complexos (ADR-008)
+- ✅ Extração de CSS estruturado (`css-extractor.ts`): cores, espaçamentos, bordas, sombras, tipografia, gradientes, imagens de fundo
+- ✅ Suporte a breakpoints responsivos (sm, md, lg, xl, 2xl) → configurações `${setting}_${breakpoint}`
+- ✅ Suporte a Motion Effects (animações) mapeadas de classes Tailwind (30+ animações)
+- ✅ Melhorado mapeamento de CSS inline
+- ✅ Melhorado suporte a imagens (background, srcset, figcaption)
 
 ### IA — Providers
 - ✅ Vision AI: cascata de 5 providers (Gemini, OpenRouter, Groq, Claude proxy)
@@ -45,12 +51,13 @@
 
 ### DevOps
 - ✅ Deploy automático: push → GitHub Actions → FTP Hostinger
-- ✅ 70 testes unitários (Vitest + happy-dom)
+- ✅ Testes unitários (Vitest + happy-dom)
 - ✅ TypeScript strict (noUnusedLocals, noUnusedParameters)
 
 ### Documentação
-- ✅ WKOS com 26 docs de referência + 6 governance files
-- ✅ prompts/ com 6 arquivos técnicos de referência
+- ✅ WKOS com 27 docs de referência + 6 governance files
+- ✅ prompts/ com 7 arquivos técnicos de referência
+- ✅ ADR-008: Estratégia Híbrida para Fidelidade Máxima
 
 ---
 
@@ -63,15 +70,14 @@
 ### Backlog
 - 📋 SPEC-001: Smart Export Manager
 - 📋 SPEC-002: URL Import
-- 📋 Mobile responsivo
 - 📋 Score de qualidade visível na UI
 - 📋 Skeleton loading
+- 📋 Validador visual mais preciso (comparação screenshot ↔ Elementor preview)
 
 ---
 
 ## Não Suportado (Confirmado)
 
-- ❌ Mobile / Tablet responsivo
 - ❌ Import de JSON Elementor existente (re-import)
 - ❌ Import por URL de site ao vivo
 - ❌ Export para WPBakery / Divi / Bricks

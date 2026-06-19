@@ -3,6 +3,7 @@
 // [TECH DECISION]: DOMParser nativo evita dependências externas de parse
 
 import { generateId } from '@/utils/generateId'
+import { extractCSS } from '@/services/css-extractor'
 import type { LayoutNode, NodeType } from '@/types/layout.types'
 
 const TAG_TO_NODE_TYPE: Record<string, NodeType> = {
@@ -51,6 +52,8 @@ function domNodeToLayoutNode(el: Element): LayoutNode {
   const tag = el.tagName.toLowerCase()
   const attributes = parseAttributes(el)
   const styles = attributes.style ? parseInlineStyles(attributes.style) : undefined
+  const classes = attributes.class ?? ''
+  const extractedCSS = extractCSS(classes, styles ?? {})
   const directText = Array.from(el.childNodes)
     .filter(n => n.nodeType === Node.TEXT_NODE)
     .map(n => n.textContent?.trim() ?? '')
@@ -65,6 +68,7 @@ function domNodeToLayoutNode(el: Element): LayoutNode {
     attributes,
     textContent: directText || undefined,
     styles,
+    extractedCSS,  // CSS extraído estruturado
     rawHtml: el.outerHTML,  // preserva HTML original completo (texto misto + filhos)
   }
 }

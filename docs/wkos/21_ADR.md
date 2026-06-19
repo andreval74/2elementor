@@ -153,3 +153,52 @@ const updated = { ...element, settings: { ...element.settings, title: 'Novo Tít
 - Positivo: Zero conflito de z-index; funciona em qualquer contexto
 - Negativo: Evento de clique não borbulha naturalmente; requer ESC handler explícito
 - Neutro: Padrão estabelecido no React para modais e tooltips
+
+---
+
+## ADR-008 — Estratégia Híbrida para Fidelidade Máxima
+
+**Data:** 2026-06-18
+**Status:** Draft (aguardando aprovação do usuário)
+
+**Contexto:**
+Atualmente o sistema usa uma estratégia híbrida básica:
+- Elementos simples mapeados para widgets nativos
+- Elementos complexos/Tailwind mapeados para `widget(html)`
+
+Os usuários estão reportando que a conversão perde detalhes:
+- Gradientes, sombras, glows e opacidade
+- Responsividade breakpoints
+- Animações
+- Configurações específicas de widgets
+- Imagens referenciadas no CSS
+
+As opções consideradas foram:
+1. **Opção 1 (Só Widgets Nativos):** Tentar mapear 100% do CSS para Elementor settings
+   - Prós: Layouts editáveis
+   - Contras: Muitos CSS não tem equivalente Elementor; fidelidade baixa
+2. **Opção 2 (Só Widget HTML):** Colocar TUDO em `widget(html)`
+   - Prós: 100% de fidelidade
+   - Contras: Nada é editável visualmente; UX ruim
+3. **Opção 3 (Estratégia Híbrida Inteligente — Escolhida):** Usar IA para decidir por seção
+   - Prós: Melhor balanceamento entre editabilidade e fidelidade; inteligente
+   - Contras: Requer prompts específicos e validação
+
+**Decisão:**
+Implementar a **Estratégia Híbrida Inteligente**:
+- **Para cada seção**, usar a IA Vision para decidir automaticamente:
+  a) "Modo Nativo": Se o layout é simples → mapear para widgets nativos com o máximo de CSS convertido
+  b) "Modo Preservação Total": Se o layout é complexo (gradientes/glows/animações) → usar widget html
+- **Melhorar o Mapeamento Nativo**:
+  - Expandir o `elementor-mapper.ts` para mapear:
+    - Mais propriedades CSS (cores, espaçamentos, bordas, sombras, gradientes, tipografia)
+    - Breakpoints responsivos (mobile/tablet/desktop)
+    - Motion Effects (animações de entrada)
+    - Backgrounds de imagem
+- **Smart Fallback**:
+  - Se o mapeamento nativo não consegue preservar 80% do visual, automaticamente voltar para modo widget html
+
+**Consequências:**
+- Positivo: Balança editabilidade e fidelidade; usa IA para tomar decisões inteligentes; melhor UX para o usuário final
+- Negativo: Requer mais chamadas de IA; mais complexidade no código; precisa validar a decisão da IA
+- Neutro: Mantém a arquitetura existente; evolui incrementalmente; não quebra o que já funciona

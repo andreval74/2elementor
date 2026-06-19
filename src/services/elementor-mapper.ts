@@ -7,6 +7,7 @@
 import { generateUniqueId } from '@/utils/generateId'
 import { WEBKEEPER_FIRST_WIDGET_SETUP } from '@/utils/constants'
 import type { Section, LayoutNode } from '@/types/layout.types'
+import type { ExtractedCSS } from '@/services/css-extractor'
 import type {
   ElementorElement,
   ElementorPadding,
@@ -80,7 +81,7 @@ const TW_COLOR_RGB: Record<string, [number, number, number]> = {
   'gray-300':    [209, 213, 219],
 }
 
-// ─── STYLE HELPERS ────────────────────────────────────────────────────────────
+// ─── STYLE HELPERS (NOVOS: USANDO extractedCSS) ───────────────────────────────
 
 function nodeClass(node: LayoutNode): string {
   return node.attributes.class ?? ''
@@ -102,7 +103,142 @@ function parseColorWithOpacity(colorName: string, opacityStr?: string): string |
   return opacity === 1 ? `rgb(${r},${g},${b})` : `rgba(${r},${g},${b},${opacity})`
 }
 
+function applyExtractedColors(settings: ElementorSettings, css: ExtractedCSS): void {
+  if (css.colors?.text) settings.text_color = css.colors.text
+
+  // Handle background first: check for gradient → image → color
+  if (css.gradient) {
+    settings.background_background = 'gradient'
+    // Elementor gradient settings: we'll put the full gradient CSS in background_background_image as a fallback
+    // TODO: Parse gradient into Elementor's structured gradient fields (requires more work)
+    // For now, we also add a custom CSS class with the gradient
+    if (!settings._css_classes) settings._css_classes = ''
+    settings._css_classes += ' wk-gradient'
+    // Also put the raw CSS in background_image for compatibility
+    settings.background_image = { url: '', url_bypass: '', size: 'cover', position: 'center center', repeat: 'no-repeat' }
+    settings.background_background_image = css.gradient
+  } else if (css.bgImage) {
+    settings.background_background = 'classic'
+    settings.background_image = { url: css.bgImage, url_bypass: '', size: 'cover', position: 'center center', repeat: 'no-repeat' }
+  } else if (css.colors?.bg) {
+    settings.background_background = 'classic'
+    settings.background_color = css.colors.bg
+  }
+
+  if (css.colors?.border) {
+    settings.border_border = 'solid'
+    settings.border_color = { color: css.colors.border }
+  }
+}
+
+function applyExtractedSpacing(settings: ElementorSettings, css: ExtractedCSS): void {
+  if (css.spacing?.p) {
+    const val = parseInt(css.spacing.p)
+    if (!isNaN(val)) {
+      const v = String(val)
+      settings.padding = { unit: 'px', top: v, right: v, bottom: v, left: v, isLinked: true }
+    }
+  }
+  if (css.spacing?.gap) {
+    const val = parseInt(css.spacing.gap)
+    if (!isNaN(val)) {
+      const v = String(val)
+      settings.gap = { column: v, row: v }
+    }
+  }
+}
+
+function applyExtractedBorder(settings: ElementorSettings, css: ExtractedCSS): void {
+  if (css.border?.width) {
+    settings.border_border = 'solid'
+    const v = css.border.width.replace('px', '')
+    settings.border_width = { unit: 'px', top: v, right: v, bottom: v, left: v, isLinked: true }
+  }
+  if (css.border?.radius) {
+    const v = css.border.radius.replace('px', '')
+    settings.border_radius = { unit: 'px', top: v, right: v, bottom: v, left: v, isLinked: true }
+  }
+}
+
+function applyExtractedShadow(settings: ElementorSettings, css: ExtractedCSS): void {
+  if (css.shadow) {
+    // Elementor usa um objeto para sombra, por simplicidade, adicionamos uma classe custom
+    // ou podemos usar o campo css_classes
+    if (!settings._css_classes) settings._css_classes = ''
+    settings._css_classes += ' wk-shadow'
+    // TODO: Mapear sombra exata para Elementor settings (requer parser da string)
+  }
+}
+
+function applyExtractedTypography(settings: ElementorSettings, css: ExtractedCSS): void {
+  settings.typography_typography = 'custom'
+  settings.typography_font_family = 'Inter'
+  if (css.typography?.fontSize) {
+    const size = parseInt(css.typography.fontSize.replace('px', ''))
+    if (!isNaN(size)) {
+      settings.typography_font_size = { size, unit: 'px' }
+    }
+  }
+  if (css.typography?.fontWeight) {
+    settings.typography_font_weight = css.typography.fontWeight
+  }
+  if (css.typography?.lineHeight) {
+    // Try to parse line-height as number, if not, just use 1.4 as fallback
+    let num = parseFloat(css.typography.lineHeight)
+    if (!isNaN(num)) {
+      settings.typography_line_height = { size: num, unit: 'em' }
+    }
+  }
+  if (css.typography?.letterSpacing) {
+    // Try to parse letter-spacing as number in em/px
+    let num = parseFloat(css.typography.letterSpacing.replace(/[a-z]/g, ''))
+    if (!isNaN(num)) {
+      settings.typography_letter_spacing = { size: num, unit: 'em' }
+    }
+  }
+}
+
+function applyExtractedCss(settings: ElementorSettings, css: ExtractedCSS): void {
+  // Aplica o base
+  applyExtractedColors(settings, css)
+  applyExtractedSpacing(settings, css)
+  applyExtractedBorder(settings, css)
+  applyExtractedShadow(settings, css)
+  applyExtractedTypography(settings, css)
+
+  // Aplica Motion Effects (animações)
+  if (css.animation) {
+    // Elementor usa "_animation" para os efeitos de entrada
+    settings._animation = css.animation
+    // Habilita a animação
+    settings._animation_popup = 'yes'
+  }
+
+  // Helper para aplicar breakpoints
+  const applyBreakpoint = (breakpoint: 'sm' | 'md' | 'lg' | 'xl' | '2xl', breakpointCss: ExtractedCSS) => {
+    const breakpointSettings: ElementorSettings = {}
+    applyExtractedColors(breakpointSettings, breakpointCss)
+    applyExtractedSpacing(breakpointSettings, breakpointCss)
+    applyExtractedBorder(breakpointSettings, breakpointCss)
+    applyExtractedShadow(breakpointSettings, breakpointCss)
+    applyExtractedTypography(breakpointSettings, breakpointCss)
+    for (const [key, value] of Object.entries(breakpointSettings)) {
+      settings[`${key}_${breakpoint}`] = value
+    }
+  }
+
+  // Aplica valores responsivos
+  if (css.responsive?.sm) applyBreakpoint('sm', css.responsive.sm)
+  if (css.responsive?.md) applyBreakpoint('md', css.responsive.md)
+  if (css.responsive?.lg) applyBreakpoint('lg', css.responsive.lg)
+  if (css.responsive?.xl) applyBreakpoint('xl', css.responsive.xl)
+  if (css.responsive?.['2xl']) applyBreakpoint('2xl', css.responsive['2xl'])
+}
+
+// ─── STYLE HELPERS (EXISTENTES: FALLBACK SE extractedCSS NÃO EXISTIR) ─────────
+
 function extractColor(node: LayoutNode): string | undefined {
+  if (node.extractedCSS?.colors?.text) return node.extractedCSS.colors.text
   const inlineColor = node.styles?.['color']
   if (inlineColor) {
     const cleaned = inlineColor.trim()
@@ -132,6 +268,7 @@ function extractColor(node: LayoutNode): string | undefined {
 }
 
 function extractBgColor(node: LayoutNode): string | undefined {
+  if (node.extractedCSS?.colors?.bg) return node.extractedCSS.colors.bg
   const inlineBg = node.styles?.['background-color'] ?? node.styles?.['background']
   if (inlineBg) {
     const cleaned = inlineBg.trim()
@@ -162,6 +299,7 @@ function extractBgColor(node: LayoutNode): string | undefined {
 }
 
 function extractBgImage(node: LayoutNode): { url: string } | undefined {
+  if (node.extractedCSS?.bgImage) return { url: node.extractedCSS.bgImage }
   const bg = node.styles?.['background-image']
   if (!bg) return undefined
   const m = bg.match(/url\(['"]?([^'")\s]+)['"]?\)/)
@@ -184,6 +322,10 @@ function extractAbsoluteBgImg(node: LayoutNode): { url: string } | undefined {
 }
 
 function extractFontSize(node: LayoutNode): ElementorTypographySize | undefined {
+  if (node.extractedCSS?.typography?.fontSize) {
+    const size = parseInt(node.extractedCSS.typography.fontSize.replace('px', ''))
+    if (!isNaN(size)) return { size, unit: 'px' }
+  }
   const fs = node.styles?.['font-size']
   if (fs) {
     const m = fs.match(/^(\d+(?:\.\d+)?)(px|rem|em)$/)
@@ -201,6 +343,7 @@ function extractFontSize(node: LayoutNode): ElementorTypographySize | undefined 
 }
 
 function extractFontWeight(node: LayoutNode): string | undefined {
+  if (node.extractedCSS?.typography?.fontWeight) return node.extractedCSS.typography.fontWeight
   if (node.styles?.['font-weight']) return node.styles['font-weight']
   const c = nodeClass(node)
   const parts = c.split(/\s+/)
@@ -236,6 +379,13 @@ function extractAlign(node: LayoutNode): 'left' | 'center' | 'right' | undefined
 }
 
 function extractPadding(node: LayoutNode): ElementorPadding | undefined {
+  if (node.extractedCSS?.spacing?.p) {
+    const val = parseInt(node.extractedCSS.spacing.p)
+    if (!isNaN(val)) {
+      const v = String(val)
+      return { unit: 'px', top: v, right: v, bottom: v, left: v, isLinked: true }
+    }
+  }
   const c = nodeClass(node)
   let top = 0, right = 0, bottom = 0, left = 0, found = false
 
@@ -262,6 +412,12 @@ function extractPadding(node: LayoutNode): ElementorPadding | undefined {
 }
 
 function extractBorderRadius(node: LayoutNode): ElementorPadding | undefined {
+  if (node.extractedCSS?.border?.radius) {
+    const v = node.extractedCSS.border.radius.replace('px', '')
+    if (!isNaN(parseInt(v))) {
+      return { unit: 'px', top: v, right: v, bottom: v, left: v, isLinked: true }
+    }
+  }
   const c = nodeClass(node)
   const parts = c.split(/\s+/)
   // Iteração em ordem de especificidade (mais específico primeiro — já ordenado no objeto)
@@ -282,6 +438,16 @@ function extractBorderRadius(node: LayoutNode): ElementorPadding | undefined {
 function extractBorder(
   node: LayoutNode,
 ): { border_border: 'solid'; border_width: ElementorPadding; border_color: { color: string } } | undefined {
+  if (node.extractedCSS?.border?.width || node.extractedCSS?.colors?.border) {
+    const width = node.extractedCSS.border?.width ? parseInt(node.extractedCSS.border.width.replace('px', '')) : 1
+    const color = node.extractedCSS.colors?.border || '#000000'
+    const ws = String(isNaN(width) ? 1 : width)
+    return {
+      border_border: 'solid',
+      border_width: { unit: 'px', top: ws, right: ws, bottom: ws, left: ws, isLinked: true },
+      border_color: { color },
+    }
+  }
   const c = nodeClass(node)
   const parts = c.split(/\s+/)
   const hasBorder = parts.some(p => p === 'border' || p.startsWith('border-'))
@@ -316,6 +482,13 @@ function extractBorder(
 }
 
 function extractGap(node: LayoutNode): { column: string; row: string } {
+  if (node.extractedCSS?.spacing?.gap) {
+    const val = parseInt(node.extractedCSS.spacing.gap)
+    if (!isNaN(val)) {
+      const v = String(val)
+      return { column: v, row: v }
+    }
+  }
   const c = nodeClass(node)
   let col = 20, row = 0
 
@@ -330,6 +503,10 @@ function extractGap(node: LayoutNode): { column: string; row: string } {
 }
 
 function applyTypography(settings: ElementorSettings, node: LayoutNode): void {
+  if (node.extractedCSS) {
+    applyExtractedTypography(settings, node.extractedCSS)
+    return
+  }
   settings.typography_typography = 'custom'
   settings.typography_font_family = 'Inter'
   const fontSize = extractFontSize(node)
@@ -356,9 +533,14 @@ function buildHeadingWidget(node: LayoutNode): ElementorElement {
   if (cssClasses) settings._css_classes = cssClasses
   const align = extractAlign(node)
   if (align) settings.align = align
-  const color = extractColor(node)
-  if (color) settings.title_color = color
-  applyTypography(settings, node)
+  if (node.extractedCSS) {
+    if (node.extractedCSS.colors?.text) settings.title_color = node.extractedCSS.colors.text
+    applyExtractedTypography(settings, node.extractedCSS)
+  } else {
+    const color = extractColor(node)
+    if (color) settings.title_color = color
+    applyTypography(settings, node)
+  }
 
   return { id: freshId(), elType: 'widget', widgetType: 'heading', isInner: false, settings, elements: [] }
 }
@@ -368,20 +550,64 @@ function buildTextEditorWidget(node: LayoutNode): ElementorElement {
   const settings: ElementorSettings = { editor }
   const cssClasses = (node.attributes.class ?? '').trim()
   if (cssClasses) settings._css_classes = cssClasses
-  const color = extractColor(node)
-  if (color) settings.text_color = color
-  applyTypography(settings, node)
+  if (node.extractedCSS) {
+    applyExtractedCss(settings, node.extractedCSS)
+  } else {
+    const color = extractColor(node)
+    if (color) settings.text_color = color
+    applyTypography(settings, node)
+  }
   return { id: freshId(), elType: 'widget', widgetType: 'text-editor', isInner: false, settings, elements: [] }
 }
 
 function buildImageWidget(node: LayoutNode): ElementorElement {
-  const url = node.attributes.src ?? node.attributes['data-src'] ?? ''
-  const alt = node.attributes.alt ?? ''
-  const settings: ElementorSettings = { image: { url, id: 0, alt }, image_size: 'full' }
+  let url = node.attributes.src ?? node.attributes['data-src'] ?? ''
+  let alt = node.attributes.alt ?? ''
+  let figcaptionText = ''
+
+  // Check if it's a figure: find img and figcaption inside
+  if (node.tag === 'figure') {
+    const imgNode = node.children.find(c => c.tag === 'img')
+    if (imgNode) {
+      url = imgNode.attributes.src ?? imgNode.attributes['data-src'] ?? ''
+      alt = imgNode.attributes.alt ?? ''
+    }
+    const figcapNode = node.children.find(c => c.tag === 'figcaption')
+    if (figcapNode) {
+      figcaptionText = figcapNode.textContent ?? ''
+    }
+  }
+
+  const settings: ElementorSettings = { 
+    image: { url, id: 0, alt }, 
+    image_size: 'full' 
+  }
+
+  // Add srcset and sizes if available
+  if (node.attributes.srcset) {
+    // Elementor doesn't have a direct srcset field, so add as custom class or use raw HTML fallback
+    if (!settings._css_classes) settings._css_classes = ''
+    settings._css_classes += ' wk-has-srcset'
+    // Also, we can add the srcset as an attribute in a custom CSS class, or use a fallback widget
+    // For now, just store for reference
+  }
+
+  // Add caption if available
+  if (figcaptionText) {
+    settings.caption = figcaptionText
+  }
+
   const cssClasses = (node.attributes.class ?? '').trim()
-  if (cssClasses) settings._css_classes = cssClasses
+  if (cssClasses) settings._css_classes = (settings._css_classes ?? '') + ' ' + cssClasses
+
   const align = extractAlign(node)
   if (align) settings.align = align
+
+  // Apply extracted CSS
+  if (node.extractedCSS) {
+    applyExtractedCss(settings, node.extractedCSS)
+  }
+
   return { id: freshId(), elType: 'widget', widgetType: 'image', isInner: false, settings, elements: [] }
 }
 
@@ -405,15 +631,35 @@ function buildButtonWidget(node: LayoutNode): ElementorElement {
   if (cssClasses) settings._css_classes = cssClasses
   const align = extractAlign(node)
   if (align) settings.align = align
-  const bgColor = extractBgColor(node)
-  if (bgColor) settings.background_color = bgColor
-  const color = extractColor(node)
-  if (color) settings.button_text_color = color
-  const br = extractBorderRadius(node)
-  if (br) settings.border_radius = br
-  // Padding interno do botão (px-8 py-4 → text_padding no Elementor, não padding)
-  const textPadding = extractPadding(node)
-  if (textPadding) settings.text_padding = textPadding
+  
+  if (node.extractedCSS) {
+    if (node.extractedCSS.colors?.bg) {
+      settings.background_background = 'classic'
+      settings.background_color = node.extractedCSS.colors.bg
+    }
+    if (node.extractedCSS.colors?.text) settings.button_text_color = node.extractedCSS.colors.text
+    if (node.extractedCSS.border?.radius) {
+      const v = node.extractedCSS.border.radius.replace('px', '')
+      settings.border_radius = { unit: 'px', top: v, right: v, bottom: v, left: v, isLinked: true }
+    }
+    if (node.extractedCSS.spacing?.p) {
+      const val = parseInt(node.extractedCSS.spacing.p)
+      if (!isNaN(val)) {
+        const v = String(val)
+        settings.text_padding = { unit: 'px', top: v, right: v, bottom: v, left: v, isLinked: true }
+      }
+    }
+  } else {
+    const bgColor = extractBgColor(node)
+    if (bgColor) settings.background_color = bgColor
+    const color = extractColor(node)
+    if (color) settings.button_text_color = color
+    const br = extractBorderRadius(node)
+    if (br) settings.border_radius = br
+    // Padding interno do botão (px-8 py-4 → text_padding no Elementor, não padding)
+    const textPadding = extractPadding(node)
+    if (textPadding) settings.text_padding = textPadding
+  }
   return { id: freshId(), elType: 'widget', widgetType: 'button', isInner: false, settings, elements: [] }
 }
 
